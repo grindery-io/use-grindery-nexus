@@ -1,5 +1,5 @@
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom/client';
 import GrinderyNexusContextProvider, { useGrinderyNexus } from '../.';
 
 declare global {
@@ -9,7 +9,10 @@ declare global {
 }
 
 const AuthenticationButton = () => {
-  const { user, connection, connectUser, disconnect } = useGrinderyNexus();
+  const { user, connect, disconnect } = useGrinderyNexus();
+
+  console.log('user', user);
+  
 
   if(user){
       return (
@@ -29,12 +32,10 @@ const AuthenticationButton = () => {
       )
   }
 
-  return !connection || connection.status !== "connected" ? (
+  return !user ? (
       <button
           onClick={() => {
-              if (!connection || connection.status !== "connecting") {
-                  connectUser();
-              }
+              connect()
           }}
       >Connect</button>
   ) : null;
@@ -48,4 +49,6 @@ const App = () => {
     );
 };
 
-ReactDOM.render(<App />, document.getElementById('root'));
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container!)
+root.render(<App />)

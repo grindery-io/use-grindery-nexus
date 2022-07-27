@@ -32,7 +32,7 @@ const App = () => {
 import { useGrinderyNexus } from "use-grindery-nexus";
 
 const AuthenticationButton = () => {
-    const { user, connection, connectUser, disconnect } = useGrinderyNexus();
+    const { user, connect, disconnect } = useGrinderyNexus();
 
     if(user){
         return (
@@ -52,12 +52,10 @@ const AuthenticationButton = () => {
         )
     }
 
-    return !connection || connection.status !== "connected" ? (
+    return !user ? (
         <button
             onClick={() => {
-                if (!connection || connection.status !== "connecting") {
-                    connectUser();
-                }
+                connect();
             }}
         >Connect</button>
     ) : null;
