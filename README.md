@@ -66,7 +66,7 @@ const AuthenticationButton = () => {
 
 ## Development
 
-See [DEVELOPMENT.md](https://github.com/grindery-io/use-grindery-nexus/DEVELOPMENT.md) file.
+See [DEVELOPMENT.md](https://github.com/grindery-io/use-grindery-nexus/blob/master/DEVELOPMENT.md) file.
 
 ## License
 
