@@ -3,8 +3,6 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import Web3Modal from 'web3modal';
 // @ts-ignore
 import { providers } from 'ethers';
-// @ts-ignore
-//import WalletConnectProvider from '@walletconnect/web3-provider'
 
 export type GrinderyNexusContextProps = {
   /** Connect user wallet */
@@ -102,14 +100,7 @@ export const GrinderyNexusContextProvider = (
   };
 
   useEffect(() => {
-    const providerOptions = {
-      /*walletconnect: {
-        package: WalletConnectProvider,
-        options: {
-          infuraId: "d62d1198328e4e08bb95c134a141717a",
-        }
-      },*/
-    };
+    const providerOptions = {};
 
     const newWeb3Modal = new Web3Modal({
       cacheProvider: cacheProvider,
