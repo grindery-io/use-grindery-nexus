@@ -70,7 +70,6 @@ export const GrinderyNexusContextProvider = (
   const [chain, setChain] = useState<number | null>(null);
 
   const addListeners = async (web3ModalProvider: any) => {
-    
     // Subscribe to account change
     web3ModalProvider.on('accountsChanged', () => {
       window.location.reload();
@@ -119,10 +118,10 @@ export const GrinderyNexusContextProvider = (
   }, [web3Modal]);
 
   useEffect(() => {
-    if(address && chain){
-      setUser(`eip155:${chain}:${address}`)
+    if (address && chain) {
+      setUser(`eip155:${chain}:${address}`);
     } else {
-      setUser(null)
+      setUser(null);
     }
   }, [address, chain]);
 
@@ -136,7 +135,7 @@ export const GrinderyNexusContextProvider = (
         address,
         setAddress,
         chain,
-        setChain
+        setChain,
       }}
     >
       {children}
