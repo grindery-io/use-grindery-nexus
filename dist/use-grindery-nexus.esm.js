@@ -383,18 +383,24 @@ function _asyncToGenerator(fn) {
   };
 }
 
-/** Grindery Nexus Context */
+var ENGINE_URL = 'https://orchestrator.grindery.org'; // Default context properties
 
-var GrinderyNexusContext = /*#__PURE__*/createContext({
+var defaultContext = {
+  user: null,
+  address: null,
+  chain: null,
+  token: null,
+  message: null,
+  signature: null,
   connect: function connect() {},
   disconnect: function disconnect() {},
-  user: null,
   setUser: function setUser() {},
-  address: null,
   setAddress: function setAddress() {},
-  chain: null,
   setChain: function setChain() {}
-});
+};
+/** Grindery Nexus Context */
+
+var GrinderyNexusContext = /*#__PURE__*/createContext(defaultContext);
 /** Grindery Nexus Context Provider */
 
 var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) {
@@ -403,22 +409,48 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
   var _useState = useState(null),
       web3Modal = _useState[0],
-      setWeb3Modal = _useState[1]; // User id
+      setWeb3Modal = _useState[1]; // Web3Provider library
 
 
   var _useState2 = useState(null),
-      user = _useState2[0],
-      setUser = _useState2[1]; // User wallet address
+      library = _useState2[0],
+      setLibrary = _useState2[1]; // User account
 
 
   var _useState3 = useState(null),
-      address = _useState3[0],
-      setAddress = _useState3[1]; // User chain id
+      account = _useState3[0],
+      setAccount = _useState3[1]; // User id
 
 
   var _useState4 = useState(null),
-      chain = _useState4[0],
-      setChain = _useState4[1];
+      user = _useState4[0],
+      setUser = _useState4[1]; // User wallet address
+
+
+  var _useState5 = useState(null),
+      address = _useState5[0],
+      setAddress = _useState5[1]; // User chain id
+
+
+  var _useState6 = useState(null),
+      chain = _useState6[0],
+      setChain = _useState6[1]; // Auth message
+
+
+  var _useState7 = useState(null),
+      message = _useState7[0],
+      setMessage = _useState7[1]; // Authentication token object
+
+
+  var _useState8 = useState(null),
+      token = _useState8[0],
+      setToken = _useState8[1]; // Signed authentication message
+
+
+  var _useState9 = useState(null),
+      signature = _useState9[0],
+      setSignature = _useState9[1]; // Subscribe to account change
+
 
   var addListeners = /*#__PURE__*/function () {
     var _ref = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(web3ModalProvider) {
@@ -426,7 +458,6 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              // Subscribe to account change
               web3ModalProvider.on('accountsChanged', function () {
                 window.location.reload();
               });
@@ -442,11 +473,12 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     return function addListeners(_x) {
       return _ref.apply(this, arguments);
     };
-  }();
+  }(); // Connect MetaMask wallet
+
 
   var connect = /*#__PURE__*/function () {
     var _ref2 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2() {
-      var provider, ethersProvider, userAddress, userChain;
+      var provider, ethersProvider, userAddress, userChain, accounts;
       return _regeneratorRuntime().wrap(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
@@ -468,10 +500,17 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
             case 10:
               userChain = _context2.sent;
+              _context2.next = 13;
+              return ethersProvider.listAccounts();
+
+            case 13:
+              accounts = _context2.sent;
+              setLibrary(ethersProvider);
+              if (accounts) setAccount(accounts[0]);
               setAddress(userAddress);
               setChain(userChain);
 
-            case 13:
+            case 18:
             case "end":
               return _context2.stop();
           }
@@ -482,7 +521,19 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     return function connect() {
       return _ref2.apply(this, arguments);
     };
-  }();
+  }(); // Clear user state
+
+
+  var clearUserState = function clearUserState() {
+    setUser(null);
+    setAddress(null);
+    setChain(null);
+    setAccount(null);
+    setMessage(null);
+    setToken(null);
+    setSignature(null);
+  }; // Disconnect user
+
 
   var disconnect = /*#__PURE__*/function () {
     var _ref3 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3() {
@@ -494,11 +545,9 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
               return web3Modal.clearCachedProvider();
 
             case 2:
-              setUser(null);
-              setAddress(null);
-              setChain(null);
+              clearUserState();
 
-            case 5:
+            case 3:
             case "end":
               return _context3.stop();
           }
@@ -509,7 +558,156 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     return function disconnect() {
       return _ref3.apply(this, arguments);
     };
-  }();
+  }(); // Fetch authentication message from the engine API
+
+
+  var fetchMessage = /*#__PURE__*/function () {
+    var _ref4 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4(userAddress) {
+      var res, json;
+      return _regeneratorRuntime().wrap(function _callee4$(_context4) {
+        while (1) {
+          switch (_context4.prev = _context4.next) {
+            case 0:
+              _context4.next = 2;
+              return fetch(ENGINE_URL + "/oauth/eth-get-message?address=" + userAddress);
+
+            case 2:
+              res = _context4.sent;
+
+              if (!res.ok) {
+                _context4.next = 10;
+                break;
+              }
+
+              _context4.next = 6;
+              return res.json();
+
+            case 6:
+              json = _context4.sent;
+              setMessage(json.message || null);
+              _context4.next = 12;
+              break;
+
+            case 10:
+              console.error('Fetch message error', res.status);
+              clearUserState();
+
+            case 12:
+            case "end":
+              return _context4.stop();
+          }
+        }
+      }, _callee4);
+    }));
+
+    return function fetchMessage(_x2) {
+      return _ref4.apply(this, arguments);
+    };
+  }(); // Sign authentication message with MetaMask
+
+
+  var signMessage = /*#__PURE__*/function () {
+    var _ref5 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee5(lib, msg, userAccount) {
+      var newSignature;
+      return _regeneratorRuntime().wrap(function _callee5$(_context5) {
+        while (1) {
+          switch (_context5.prev = _context5.next) {
+            case 0:
+              if (web3Modal) {
+                _context5.next = 2;
+                break;
+              }
+
+              return _context5.abrupt("return");
+
+            case 2:
+              _context5.prev = 2;
+              _context5.next = 5;
+              return lib.provider.request({
+                method: 'personal_sign',
+                params: [msg, userAccount]
+              });
+
+            case 5:
+              newSignature = _context5.sent;
+              setSignature(newSignature);
+              _context5.next = 13;
+              break;
+
+            case 9:
+              _context5.prev = 9;
+              _context5.t0 = _context5["catch"](2);
+              console.error('signMessage error', _context5.t0);
+              clearUserState();
+
+            case 13:
+            case "end":
+              return _context5.stop();
+          }
+        }
+      }, _callee5, null, [[2, 9]]);
+    }));
+
+    return function signMessage(_x3, _x4, _x5) {
+      return _ref5.apply(this, arguments);
+    };
+  }(); // Get access token from the engine API
+
+
+  var getToken = /*#__PURE__*/function () {
+    var _ref6 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee6(msg, signedMsg) {
+      var res, result;
+      return _regeneratorRuntime().wrap(function _callee6$(_context6) {
+        while (1) {
+          switch (_context6.prev = _context6.next) {
+            case 0:
+              _context6.next = 2;
+              return fetch(ENGINE_URL + "/oauth/token", {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                body: JSON.stringify({
+                  grant_type: 'urn:grindery:eth-signature',
+                  message: msg,
+                  signature: signedMsg
+                })
+              });
+
+            case 2:
+              res = _context6.sent;
+
+              if (!res.ok) {
+                _context6.next = 10;
+                break;
+              }
+
+              _context6.next = 6;
+              return res.json();
+
+            case 6:
+              result = _context6.sent;
+              setToken(result);
+              _context6.next = 12;
+              break;
+
+            case 10:
+              console.error('getToken error', res.status);
+              clearUserState();
+
+            case 12:
+            case "end":
+              return _context6.stop();
+          }
+        }
+      }, _callee6);
+    }));
+
+    return function getToken(_x6, _x7) {
+      return _ref6.apply(this, arguments);
+    };
+  }(); // Set web3Modal instance
+
 
   useEffect(function () {
     var providerOptions = {};
@@ -519,29 +717,51 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       providerOptions: providerOptions
     });
     setWeb3Modal(newWeb3Modal);
-  }, []);
+  }, []); // connect automatically and without a popup if user was connected before
+
   useEffect(function () {
-    // connect automatically and without a popup if user is already connected
     if (web3Modal && web3Modal.cachedProvider) {
       connect();
     }
-  }, [web3Modal]);
+  }, [web3Modal]); // set user if token and address is known
+
   useEffect(function () {
-    if (address) {
+    if (token != null && token.access_token && address) {
       setUser("eip155:1:" + address);
     } else {
       setUser(null);
     }
-  }, [address]);
+  }, [token == null ? void 0 : token.access_token, address]); // Fetch authentication message if user address is known
+
+  useEffect(function () {
+    if (address) {
+      fetchMessage(address);
+    }
+  }, [address]); // Sign authentication message if message is known
+
+  useEffect(function () {
+    if (library && message && account && !signature) {
+      signMessage(library, message, account);
+    }
+  }, [library, message, account, signature]); // Get authentication token if message is signed
+
+  useEffect(function () {
+    if (message && signature) {
+      getToken(message, signature);
+    }
+  }, [message, signature]);
   return React.createElement(GrinderyNexusContext.Provider, {
     value: {
+      user: user,
+      address: address,
+      chain: chain,
+      token: token,
+      message: message,
+      signature: signature,
       connect: connect,
       disconnect: disconnect,
-      user: user,
       setUser: setUser,
-      address: address,
       setAddress: setAddress,
-      chain: chain,
       setChain: setChain
     }
   }, children);
@@ -553,5 +773,5 @@ var useGrinderyNexus = function useGrinderyNexus() {
 };
 
 export default GrinderyNexusContextProvider;
-export { GrinderyNexusContext, GrinderyNexusContextProvider, useGrinderyNexus };
+export { ENGINE_URL, GrinderyNexusContext, GrinderyNexusContextProvider, useGrinderyNexus };
 //# sourceMappingURL=use-grindery-nexus.esm.js.map
