@@ -1,5 +1,5 @@
 {
-  "version": "0.3.1",
+  "version": "0.3.2",
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -59,9 +59,9 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "base64url": "^3.0.1",
     "bignumber.js": "^9.0.2",
     "ethers": "^5.6.9",
+    "universal-base64url": "^1.1.0",
     "web3modal": "^1.9.8"
   }
 }

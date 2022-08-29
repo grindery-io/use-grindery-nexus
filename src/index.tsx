@@ -4,7 +4,7 @@ import Web3Modal from 'web3modal';
 // @ts-ignore
 import { providers } from 'ethers';
 // @ts-ignore
-import base64url from 'base64url';
+import { encode } from 'universal-base64url';
 
 export const ENGINE_URL = 'https://orchestrator.grindery.org';
 
@@ -114,7 +114,7 @@ export const GrinderyNexusContextProvider = (
   const code =
     (message &&
       signature &&
-      base64url(
+      encode(
         JSON.stringify({
           message: message,
           signature: signature,

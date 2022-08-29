@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import Web3Modal from 'web3modal';
 import { providers } from 'ethers';
-import base64url from 'base64url';
+import { encode } from 'universal-base64url';
 
 function _regeneratorRuntime() {
   /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */
@@ -452,7 +452,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       setSignature = _useState9[1]; // Compiled authorization code
 
 
-  var code = message && signature && base64url(JSON.stringify({
+  var code = message && signature && encode(JSON.stringify({
     message: message,
     signature: signature
   })) || null; // Subscribe to account change
