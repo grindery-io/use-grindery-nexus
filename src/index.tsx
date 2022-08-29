@@ -3,6 +3,8 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import Web3Modal from 'web3modal';
 // @ts-ignore
 import { providers } from 'ethers';
+// @ts-ignore
+import base64url from 'base64url';
 
 export const ENGINE_URL = 'https://orchestrator.grindery.org';
 
@@ -28,11 +30,8 @@ export type GrinderyNexusContextProps = {
   /** User chain id  */
   chain: number | null;
 
-  /** Authentication message */
-  message: string | null;
-
-  /** Signed authentication message */
-  signature: string | null;
+  /** Authorization code */
+  code: string | null;
 
   /** Connect user wallet */
   connect: () => void;
@@ -63,8 +62,7 @@ const defaultContext = {
   address: null,
   chain: null,
   token: null,
-  message: null,
-  signature: null,
+  code: null,
   connect: () => {},
   disconnect: () => {},
   setUser: () => {},
@@ -112,6 +110,18 @@ export const GrinderyNexusContextProvider = (
   // Signed authentication message
   const [signature, setSignature] = useState<string | null>(null);
 
+  // Compiled authorization code
+  const code =
+    (message &&
+      signature &&
+      base64url(
+        JSON.stringify({
+          message: message,
+          signature: signature,
+        })
+      )) ||
+    null;
+
   // Subscribe to account change
   const addListeners = async (web3ModalProvider: any) => {
     web3ModalProvider.on('accountsChanged', () => {
@@ -148,19 +158,54 @@ export const GrinderyNexusContextProvider = (
   const disconnect = async () => {
     await web3Modal.clearCachedProvider();
     clearUserState();
+    clearAuthSession();
   };
 
-  // Fetch authentication message from the engine API
-  const fetchMessage = async (userAddress: string) => {
-    const res = await fetch(
-      `${ENGINE_URL}/oauth/eth-get-message?address=${userAddress}`
-    );
-    if (res.ok) {
-      let json = await res.json();
-      setMessage(json.message || null);
+  // Fetch authentication message or access token from the engine API
+  const startSession = async (userAddress: string) => {
+    // Try to fetch access token
+    const resWithCreds = await fetch(
+      `${ENGINE_URL}/oauth/session?address=${userAddress}`,
+      {
+        method: 'GET',
+        credentials: 'include',
+      }
+    ).catch(async err => {
+      // If CORS error then fetch auth message
+      console.error('startSessionWithCreds error', err.message);
+      const res = await fetch(
+        `${ENGINE_URL}/oauth/session?address=${userAddress}`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (res && res.ok) {
+        let json = await res.json();
+        setMessage(json.message || null);
+      } else {
+        console.error(
+          'startSession error',
+          (res && res.status) || 'Unknown error'
+        );
+      }
+    });
+
+    if (resWithCreds && resWithCreds.ok) {
+      let json = await resWithCreds.json();
+
+      // Set access token if exists
+      if (json.access_token) {
+        setToken(json);
+      } else if (json.message) {
+        // Or set auth message
+        setMessage(json.message);
+      }
     } else {
-      console.error('Fetch message error', res.status);
-      clearUserState();
+      console.error(
+        'startSessionWithCreds error',
+        (resWithCreds && resWithCreds.status) || 'Unknown error'
+      );
     }
   };
 
@@ -180,16 +225,14 @@ export const GrinderyNexusContextProvider = (
   };
 
   // Get access token from the engine API
-  const getToken = async (msg: string, signedMsg: string) => {
-    const res = await fetch(`${ENGINE_URL}/oauth/token`, {
+  const getToken = async (code: string) => {
+    const res = await fetch(`${ENGINE_URL}/oauth/token?code=${code}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json;charset=utf-8',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        grant_type: 'urn:grindery:eth-signature',
-        message: msg,
-        signature: signedMsg,
+        grant_type: 'authorization_code',
       }),
     });
 
@@ -199,6 +242,34 @@ export const GrinderyNexusContextProvider = (
     } else {
       console.error('getToken error', res.status);
       clearUserState();
+    }
+  };
+
+  // Set refresh_token cookie
+  const registerAuthSession = async (refresh_token: string) => {
+    const res = await fetch(`${ENGINE_URL}/oauth/session-register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        refresh_token: refresh_token,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error('registerAuthSession error', res.status);
+    }
+  };
+
+  // Remove refresh_token cookie
+  const clearAuthSession = async () => {
+    const res = await fetch(`${ENGINE_URL}/oauth/session-register`, {
+      method: 'POST',
+    });
+
+    if (!res.ok) {
+      console.error('clearAuthSession error', res.status);
     }
   };
 
@@ -222,33 +293,36 @@ export const GrinderyNexusContextProvider = (
 
   // set user if token and address is known
   useEffect(() => {
-    if (token?.access_token && address) {
+    if (address && token && token.access_token) {
       setUser(`eip155:1:${address}`);
+      if (token.refresh_token) {
+        registerAuthSession(token.refresh_token);
+      }
     } else {
       setUser(null);
     }
-  }, [token?.access_token, address]);
+  }, [token, address]);
 
-  // Fetch authentication message if user address is known
+  // Start session if user address is known
   useEffect(() => {
-    if (address) {
-      fetchMessage(address);
+    if (address && !message && !signature && !token) {
+      startSession(address);
     }
-  }, [address]);
+  }, [address, message, signature, token]);
 
   // Sign authentication message if message is known
   useEffect(() => {
-    if (library && message && account && !signature) {
+    if (library && message && account && !signature && !token) {
       signMessage(library, message, account);
     }
-  }, [library, message, account, signature]);
+  }, [library, message, account, signature, token]);
 
   // Get authentication token if message is signed
   useEffect(() => {
-    if (message && signature) {
-      getToken(message, signature);
+    if (code && !token) {
+      getToken(code);
     }
-  }, [message, signature]);
+  }, [code, token]);
 
   return (
     <GrinderyNexusContext.Provider
@@ -257,8 +331,7 @@ export const GrinderyNexusContextProvider = (
         address,
         chain,
         token,
-        message,
-        signature,
+        code,
         connect,
         disconnect,
         setUser,

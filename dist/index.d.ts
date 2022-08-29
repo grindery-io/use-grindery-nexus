@@ -15,10 +15,8 @@ export declare type GrinderyNexusContextProps = {
     address: string | null;
     /** User chain id  */
     chain: number | null;
-    /** Authentication message */
-    message: string | null;
-    /** Signed authentication message */
-    signature: string | null;
+    /** Authorization code */
+    code: string | null;
     /** Connect user wallet */
     connect: () => void;
     /** Disconnect user wallet */
