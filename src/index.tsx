@@ -170,7 +170,7 @@ export const GrinderyNexusContextProvider = (
         method: 'GET',
         credentials: 'include',
       }
-    ).catch(async err => {
+    ); /*.catch(async err => {
       // If CORS error then fetch auth message
       console.error('startSessionWithCreds error', err.message);
       const res = await fetch(
@@ -189,7 +189,7 @@ export const GrinderyNexusContextProvider = (
           (res && res.status) || 'Unknown error'
         );
       }
-    });
+    });*/
 
     if (resWithCreds && resWithCreds.ok) {
       let json = await resWithCreds.json();
@@ -249,9 +249,9 @@ export const GrinderyNexusContextProvider = (
   const registerAuthSession = async (refresh_token: string) => {
     const res = await fetch(`${ENGINE_URL}/oauth/session-register`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        credentials: 'include',
       },
       body: JSON.stringify({
         refresh_token: refresh_token,
@@ -267,10 +267,7 @@ export const GrinderyNexusContextProvider = (
   const clearAuthSession = async () => {
     const res = await fetch(`${ENGINE_URL}/oauth/session-register`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        credentials: 'include',
-      },
+      credentials: 'include',
     });
 
     if (!res.ok) {

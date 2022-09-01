@@ -568,76 +568,31 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
 
   var startSession = /*#__PURE__*/function () {
-    var _ref4 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee5(userAddress) {
+    var _ref4 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4(userAddress) {
       var resWithCreds, json;
-      return _regeneratorRuntime().wrap(function _callee5$(_context5) {
+      return _regeneratorRuntime().wrap(function _callee4$(_context4) {
         while (1) {
-          switch (_context5.prev = _context5.next) {
+          switch (_context4.prev = _context4.next) {
             case 0:
-              _context5.next = 2;
+              _context4.next = 2;
               return fetch(ENGINE_URL + "/oauth/session?address=" + userAddress, {
                 method: 'GET',
                 credentials: 'include'
-              })["catch"]( /*#__PURE__*/function () {
-                var _ref5 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4(err) {
-                  var res, json;
-                  return _regeneratorRuntime().wrap(function _callee4$(_context4) {
-                    while (1) {
-                      switch (_context4.prev = _context4.next) {
-                        case 0:
-                          // If CORS error then fetch auth message
-                          console.error('startSessionWithCreds error', err.message);
-                          _context4.next = 3;
-                          return fetch(ENGINE_URL + "/oauth/session?address=" + userAddress, {
-                            method: 'GET'
-                          });
-
-                        case 3:
-                          res = _context4.sent;
-
-                          if (!(res && res.ok)) {
-                            _context4.next = 11;
-                            break;
-                          }
-
-                          _context4.next = 7;
-                          return res.json();
-
-                        case 7:
-                          json = _context4.sent;
-                          setMessage(json.message || null);
-                          _context4.next = 12;
-                          break;
-
-                        case 11:
-                          console.error('startSession error', res && res.status || 'Unknown error');
-
-                        case 12:
-                        case "end":
-                          return _context4.stop();
-                      }
-                    }
-                  }, _callee4);
-                }));
-
-                return function (_x3) {
-                  return _ref5.apply(this, arguments);
-                };
-              }());
+              });
 
             case 2:
-              resWithCreds = _context5.sent;
+              resWithCreds = _context4.sent;
 
               if (!(resWithCreds && resWithCreds.ok)) {
-                _context5.next = 10;
+                _context4.next = 10;
                 break;
               }
 
-              _context5.next = 6;
+              _context4.next = 6;
               return resWithCreds.json();
 
             case 6:
-              json = _context5.sent;
+              json = _context4.sent;
 
               // Set access token if exists
               if (json.access_token) {
@@ -647,7 +602,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
                 setMessage(json.message);
               }
 
-              _context5.next = 11;
+              _context4.next = 11;
               break;
 
             case 10:
@@ -655,10 +610,10 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
             case 11:
             case "end":
-              return _context5.stop();
+              return _context4.stop();
           }
         }
-      }, _callee5);
+      }, _callee4);
     }));
 
     return function startSession(_x2) {
@@ -668,61 +623,61 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
 
   var signMessage = /*#__PURE__*/function () {
-    var _ref6 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee6(lib, msg, userAccount) {
+    var _ref5 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee5(lib, msg, userAccount) {
       var newSignature;
-      return _regeneratorRuntime().wrap(function _callee6$(_context6) {
+      return _regeneratorRuntime().wrap(function _callee5$(_context5) {
         while (1) {
-          switch (_context6.prev = _context6.next) {
+          switch (_context5.prev = _context5.next) {
             case 0:
               if (web3Modal) {
-                _context6.next = 2;
+                _context5.next = 2;
                 break;
               }
 
-              return _context6.abrupt("return");
+              return _context5.abrupt("return");
 
             case 2:
-              _context6.prev = 2;
-              _context6.next = 5;
+              _context5.prev = 2;
+              _context5.next = 5;
               return lib.provider.request({
                 method: 'personal_sign',
                 params: [msg, userAccount]
               });
 
             case 5:
-              newSignature = _context6.sent;
+              newSignature = _context5.sent;
               setSignature(newSignature);
-              _context6.next = 13;
+              _context5.next = 13;
               break;
 
             case 9:
-              _context6.prev = 9;
-              _context6.t0 = _context6["catch"](2);
-              console.error('signMessage error', _context6.t0);
+              _context5.prev = 9;
+              _context5.t0 = _context5["catch"](2);
+              console.error('signMessage error', _context5.t0);
               clearUserState();
 
             case 13:
             case "end":
-              return _context6.stop();
+              return _context5.stop();
           }
         }
-      }, _callee6, null, [[2, 9]]);
+      }, _callee5, null, [[2, 9]]);
     }));
 
-    return function signMessage(_x4, _x5, _x6) {
-      return _ref6.apply(this, arguments);
+    return function signMessage(_x3, _x4, _x5) {
+      return _ref5.apply(this, arguments);
     };
   }(); // Get access token from the engine API
 
 
   var getToken = /*#__PURE__*/function () {
-    var _ref7 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee7(code) {
+    var _ref6 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee6(code) {
       var res, result;
-      return _regeneratorRuntime().wrap(function _callee7$(_context7) {
+      return _regeneratorRuntime().wrap(function _callee6$(_context6) {
         while (1) {
-          switch (_context7.prev = _context7.next) {
+          switch (_context6.prev = _context6.next) {
             case 0:
-              _context7.next = 2;
+              _context6.next = 2;
               return fetch(ENGINE_URL + "/oauth/token?code=" + code, {
                 method: 'POST',
                 headers: {
@@ -734,20 +689,20 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
               });
 
             case 2:
-              res = _context7.sent;
+              res = _context6.sent;
 
               if (!res.ok) {
-                _context7.next = 10;
+                _context6.next = 10;
                 break;
               }
 
-              _context7.next = 6;
+              _context6.next = 6;
               return res.json();
 
             case 6:
-              result = _context7.sent;
+              result = _context6.sent;
               setToken(result);
-              _context7.next = 12;
+              _context6.next = 12;
               break;
 
             case 10:
@@ -756,20 +711,60 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
             case 12:
             case "end":
+              return _context6.stop();
+          }
+        }
+      }, _callee6);
+    }));
+
+    return function getToken(_x6) {
+      return _ref6.apply(this, arguments);
+    };
+  }(); // Set refresh_token cookie
+
+
+  var registerAuthSession = /*#__PURE__*/function () {
+    var _ref7 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee7(refresh_token) {
+      var res;
+      return _regeneratorRuntime().wrap(function _callee7$(_context7) {
+        while (1) {
+          switch (_context7.prev = _context7.next) {
+            case 0:
+              _context7.next = 2;
+              return fetch(ENGINE_URL + "/oauth/session-register", {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  refresh_token: refresh_token
+                })
+              });
+
+            case 2:
+              res = _context7.sent;
+
+              if (!res.ok) {
+                console.error('registerAuthSession error', res.status);
+              }
+
+            case 4:
+            case "end":
               return _context7.stop();
           }
         }
       }, _callee7);
     }));
 
-    return function getToken(_x7) {
+    return function registerAuthSession(_x7) {
       return _ref7.apply(this, arguments);
     };
-  }(); // Set refresh_token cookie
+  }(); // Remove refresh_token cookie
 
 
-  var registerAuthSession = /*#__PURE__*/function () {
-    var _ref8 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee8(refresh_token) {
+  var clearAuthSession = /*#__PURE__*/function () {
+    var _ref8 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee8() {
       var res;
       return _regeneratorRuntime().wrap(function _callee8$(_context8) {
         while (1) {
@@ -778,20 +773,14 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
               _context8.next = 2;
               return fetch(ENGINE_URL + "/oauth/session-register", {
                 method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  credentials: 'include'
-                },
-                body: JSON.stringify({
-                  refresh_token: refresh_token
-                })
+                credentials: 'include'
               });
 
             case 2:
               res = _context8.sent;
 
               if (!res.ok) {
-                console.error('registerAuthSession error', res.status);
+                console.error('clearAuthSession error', res.status);
               }
 
             case 4:
@@ -802,45 +791,8 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       }, _callee8);
     }));
 
-    return function registerAuthSession(_x8) {
-      return _ref8.apply(this, arguments);
-    };
-  }(); // Remove refresh_token cookie
-
-
-  var clearAuthSession = /*#__PURE__*/function () {
-    var _ref9 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee9() {
-      var res;
-      return _regeneratorRuntime().wrap(function _callee9$(_context9) {
-        while (1) {
-          switch (_context9.prev = _context9.next) {
-            case 0:
-              _context9.next = 2;
-              return fetch(ENGINE_URL + "/oauth/session-register", {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  credentials: 'include'
-                }
-              });
-
-            case 2:
-              res = _context9.sent;
-
-              if (!res.ok) {
-                console.error('clearAuthSession error', res.status);
-              }
-
-            case 4:
-            case "end":
-              return _context9.stop();
-          }
-        }
-      }, _callee9);
-    }));
-
     return function clearAuthSession() {
-      return _ref9.apply(this, arguments);
+      return _ref8.apply(this, arguments);
     };
   }(); // Set web3Modal instance
 
