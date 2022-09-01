@@ -779,7 +779,8 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
               return fetch(ENGINE_URL + "/oauth/session-register", {
                 method: 'POST',
                 headers: {
-                  'Content-Type': 'application/json'
+                  'Content-Type': 'application/json',
+                  credentials: 'include'
                 },
                 body: JSON.stringify({
                   refresh_token: refresh_token
@@ -816,7 +817,11 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
             case 0:
               _context9.next = 2;
               return fetch(ENGINE_URL + "/oauth/session-register", {
-                method: 'POST'
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  credentials: 'include'
+                }
               });
 
             case 2:

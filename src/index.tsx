@@ -251,6 +251,7 @@ export const GrinderyNexusContextProvider = (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        credentials: 'include',
       },
       body: JSON.stringify({
         refresh_token: refresh_token,
@@ -266,6 +267,10 @@ export const GrinderyNexusContextProvider = (
   const clearAuthSession = async () => {
     const res = await fetch(`${ENGINE_URL}/oauth/session-register`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        credentials: 'include',
+      },
     });
 
     if (!res.ok) {
