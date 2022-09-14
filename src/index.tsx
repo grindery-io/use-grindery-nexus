@@ -5,8 +5,58 @@ import Web3Modal from 'web3modal';
 import { providers } from 'ethers';
 // @ts-ignore
 import { encode } from 'universal-base64url';
+// @ts-ignore
+import * as fcl from '@onflow/fcl';
 
 export const ENGINE_URL = 'https://orchestrator.grindery.org';
+
+type AccountProofData = {
+  // e.g. "Awesome App (v0.0)" - A human readable string to identify your application during signing
+  appIdentifier: string;
+
+  // e.g. "75f8587e5bd5f9dcc9909d0dae1f0ac5814458b2ae129620502cb936fde7120a" - minimum 32-byte random nonce as hex string
+  nonce: string;
+};
+
+type AccountProofDataResolver = () => Promise<AccountProofData | null>;
+
+const accountProofDataResolver: AccountProofDataResolver = async () => {
+  const resWithCreds = await fetch(`${ENGINE_URL}/oauth/flow-get-nonce`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (resWithCreds && resWithCreds.ok) {
+    let json = await resWithCreds.json();
+
+    // Set access token if exists
+    if (json.nonce) {
+      return {
+        appIdentifier: 'Grindery Nexus',
+        nonce: json.nonce,
+      };
+    } else {
+      throw new Error('get nonce failed');
+    }
+  } else {
+    console.error(
+      'getFlowNonce error',
+      (resWithCreds && resWithCreds.status) || 'Unknown error'
+    );
+    throw new Error('get nonce failed');
+  }
+};
+
+fcl.config({
+  //"accessNode.api": "http://rest-testnet.onflow.org",
+  'discovery.wallet': 'https://fcl-discovery.onflow.org/testnet/authn',
+  //"discovery.authn.endpoint": "https://fcl-discovery.onflow.org/api/testnet/authn",
+  //"discovery.authn.include": ["0x82ec283f88a62e65", "0x9d2e44203cb13051"], // Service account address
+  'app.detail.title': 'Grindery Nexus',
+  'app.detail.icon':
+    'https://nexus.grindery.org/static/media/nexus-square.7402bdeb27ab56504250ca409fac38bd.svg',
+  'fcl.accountProof.resolver': accountProofDataResolver,
+});
 
 // Authentication token object definition
 export type AuthToken = {
@@ -14,6 +64,11 @@ export type AuthToken = {
   expires_in: number;
   refresh_token: string;
   token_type: string;
+};
+
+type FlowUser = {
+  addr: string;
+  services?: any[];
 };
 
 // Context properties definition
@@ -33,6 +88,8 @@ export type GrinderyNexusContextProps = {
   /** Authorization code */
   code: string | null;
 
+  flowUser: FlowUser;
+
   /** Connect user wallet */
   connect: () => void;
 
@@ -47,6 +104,12 @@ export type GrinderyNexusContextProps = {
 
   /** Set user chain id  */
   setChain: React.Dispatch<React.SetStateAction<number | null>>;
+
+  /** Connect flow user */
+  connectFlow: () => void;
+
+  /** Disconnect Flow user */
+  disconnectFlow: () => void;
 };
 
 export type GrinderyNexusContextProviderProps = {
@@ -63,11 +126,14 @@ const defaultContext = {
   chain: null,
   token: null,
   code: null,
+  flowUser: { addr: '' },
   connect: () => {},
   disconnect: () => {},
   setUser: () => {},
   setAddress: () => {},
   setChain: () => {},
+  connectFlow: () => {},
+  disconnectFlow: () => {},
 };
 
 /** Grindery Nexus Context */
@@ -110,6 +176,9 @@ export const GrinderyNexusContextProvider = (
   // Signed authentication message
   const [signature, setSignature] = useState<string | null>(null);
 
+  // Flow chain user
+  const [flowUser, setFlowUser] = useState<FlowUser>({ addr: '' });
+
   // Compiled authorization code
   const code =
     (message &&
@@ -143,6 +212,11 @@ export const GrinderyNexusContextProvider = (
     setChain(userChain);
   };
 
+  // Connect with Flow wallet
+  const connectFlow = () => {
+    fcl.authenticate();
+  };
+
   // Clear user state
   const clearUserState = () => {
     setUser(null);
@@ -161,6 +235,10 @@ export const GrinderyNexusContextProvider = (
     clearAuthSession();
   };
 
+  const disconnectFlow = () => {
+    fcl.unauthenticate();
+  };
+
   // Fetch authentication message or access token from the engine API
   const startSession = async (userAddress: string) => {
     // Try to fetch access token
@@ -170,27 +248,7 @@ export const GrinderyNexusContextProvider = (
         method: 'GET',
         credentials: 'include',
       }
-    ); /*.catch(async err => {
-      // If CORS error then fetch auth message
-      console.error('startSessionWithCreds error', err.message);
-      const res = await fetch(
-        `${ENGINE_URL}/oauth/session?address=${userAddress}`,
-        {
-          method: 'GET',
-        }
-      );
-
-      if (res && res.ok) {
-        let json = await res.json();
-        setMessage(json.message || null);
-      } else {
-        console.error(
-          'startSession error',
-          (res && res.status) || 'Unknown error'
-        );
-      }
-    });*/
-
+    );
     if (resWithCreds && resWithCreds.ok) {
       let json = await resWithCreds.json();
 
@@ -275,6 +333,8 @@ export const GrinderyNexusContextProvider = (
     }
   };
 
+  console.log('flowUser', flowUser);
+
   // Set web3Modal instance
   useEffect(() => {
     const providerOptions = {};
@@ -326,6 +386,44 @@ export const GrinderyNexusContextProvider = (
     }
   }, [code, token]);
 
+  // subscribe to flow user
+  useEffect(() => {
+    fcl.currentUser.subscribe(setFlowUser);
+  }, []);
+
+  // Get authentication token if flow user is proofed
+  useEffect(() => {
+    if (
+      flowUser &&
+      flowUser.addr &&
+      flowUser.services?.find(service => service.type === 'account-proof')
+    ) {
+      const proof = flowUser.services?.find(
+        service => service.type === 'account-proof'
+      );
+      if (
+        proof &&
+        proof.data &&
+        proof.data.nonce &&
+        proof.data.signatures &&
+        proof.data.signatures.length > 0 &&
+        proof.data.address
+      ) {
+        const code = encode(
+          JSON.stringify({
+            type: 'flow',
+            address: proof.data.address,
+            nonce: proof.data.nonce,
+            signature: proof.data.signatures[0].signature,
+          })
+        );
+        getToken(code);
+      }
+    }
+  }, [flowUser]);
+
+  console.log('token', token);
+
   return (
     <GrinderyNexusContext.Provider
       value={{
@@ -334,11 +432,14 @@ export const GrinderyNexusContextProvider = (
         chain,
         token,
         code,
+        flowUser,
         connect,
         disconnect,
         setUser,
         setAddress,
         setChain,
+        connectFlow,
+        disconnectFlow,
       }}
     >
       {children}

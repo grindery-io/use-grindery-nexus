@@ -48,10 +48,29 @@ const AuthenticationButton = () => {
   ) : null;
 };
 
+const FlowAuthenticationButton = () => {
+  const { flowUser, connectFlow, disconnectFlow } = useGrinderyNexus();
+
+  return (
+    <button
+      onClick={() => {
+        if (flowUser && flowUser.addr) {
+          disconnectFlow();
+        } else {
+          connectFlow();
+        }
+      }}
+    >
+      {flowUser && flowUser.addr ? 'Disconnect' : 'Connect with Flow'}
+    </button>
+  );
+};
+
 const App = () => {
   return (
     <GrinderyNexusContextProvider>
       <AuthenticationButton />
+      <FlowAuthenticationButton />
     </GrinderyNexusContextProvider>
   );
 };

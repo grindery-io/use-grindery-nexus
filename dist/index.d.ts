@@ -6,6 +6,10 @@ export declare type AuthToken = {
     refresh_token: string;
     token_type: string;
 };
+declare type FlowUser = {
+    addr: string;
+    services?: any[];
+};
 export declare type GrinderyNexusContextProps = {
     /** User ID. Reference: https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-10.md */
     user: string | null;
@@ -17,6 +21,7 @@ export declare type GrinderyNexusContextProps = {
     chain: number | null;
     /** Authorization code */
     code: string | null;
+    flowUser: FlowUser;
     /** Connect user wallet */
     connect: () => void;
     /** Disconnect user wallet */
@@ -27,6 +32,10 @@ export declare type GrinderyNexusContextProps = {
     setAddress: React.Dispatch<React.SetStateAction<string | null>>;
     /** Set user chain id  */
     setChain: React.Dispatch<React.SetStateAction<number | null>>;
+    /** Connect flow user */
+    connectFlow: () => void;
+    /** Disconnect Flow user */
+    disconnectFlow: () => void;
 };
 export declare type GrinderyNexusContextProviderProps = {
     children: React.ReactNode;

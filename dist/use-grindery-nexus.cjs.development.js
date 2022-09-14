@@ -9,6 +9,7 @@ var React__default = _interopDefault(React);
 var Web3Modal = _interopDefault(require('web3modal'));
 var ethers = require('ethers');
 var universalBase64url = require('universal-base64url');
+var fcl = require('@onflow/fcl');
 
 function _regeneratorRuntime() {
   /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */
@@ -391,7 +392,78 @@ function _asyncToGenerator(fn) {
   };
 }
 
-var ENGINE_URL = 'https://orchestrator.grindery.org'; // Default context properties
+var ENGINE_URL = 'https://orchestrator.grindery.org';
+
+var accountProofDataResolver = /*#__PURE__*/function () {
+  var _ref = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
+    var resWithCreds, json;
+    return _regeneratorRuntime().wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            _context.next = 2;
+            return fetch(ENGINE_URL + "/oauth/flow-get-nonce", {
+              method: 'GET',
+              credentials: 'include'
+            });
+
+          case 2:
+            resWithCreds = _context.sent;
+
+            if (!(resWithCreds && resWithCreds.ok)) {
+              _context.next = 14;
+              break;
+            }
+
+            _context.next = 6;
+            return resWithCreds.json();
+
+          case 6:
+            json = _context.sent;
+
+            if (!json.nonce) {
+              _context.next = 11;
+              break;
+            }
+
+            return _context.abrupt("return", {
+              appIdentifier: 'Grindery Nexus',
+              nonce: json.nonce
+            });
+
+          case 11:
+            throw new Error('get nonce failed');
+
+          case 12:
+            _context.next = 16;
+            break;
+
+          case 14:
+            console.error('getFlowNonce error', resWithCreds && resWithCreds.status || 'Unknown error');
+            throw new Error('get nonce failed');
+
+          case 16:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee);
+  }));
+
+  return function accountProofDataResolver() {
+    return _ref.apply(this, arguments);
+  };
+}();
+
+fcl.config({
+  //"accessNode.api": "http://rest-testnet.onflow.org",
+  'discovery.wallet': 'https://fcl-discovery.onflow.org/testnet/authn',
+  //"discovery.authn.endpoint": "https://fcl-discovery.onflow.org/api/testnet/authn",
+  //"discovery.authn.include": ["0x82ec283f88a62e65", "0x9d2e44203cb13051"], // Service account address
+  'app.detail.title': 'Grindery Nexus',
+  'app.detail.icon': 'https://nexus.grindery.org/static/media/nexus-square.7402bdeb27ab56504250ca409fac38bd.svg',
+  'fcl.accountProof.resolver': accountProofDataResolver
+}); // Default context properties
 
 var defaultContext = {
   user: null,
@@ -399,11 +471,16 @@ var defaultContext = {
   chain: null,
   token: null,
   code: null,
+  flowUser: {
+    addr: ''
+  },
   connect: function connect() {},
   disconnect: function disconnect() {},
   setUser: function setUser() {},
   setAddress: function setAddress() {},
-  setChain: function setChain() {}
+  setChain: function setChain() {},
+  connectFlow: function connectFlow() {},
+  disconnectFlow: function disconnectFlow() {}
 };
 /** Grindery Nexus Context */
 
@@ -456,7 +533,14 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
   var _useState9 = React.useState(null),
       signature = _useState9[0],
-      setSignature = _useState9[1]; // Compiled authorization code
+      setSignature = _useState9[1]; // Flow chain user
+
+
+  var _useState10 = React.useState({
+    addr: ''
+  }),
+      flowUser = _useState10[0],
+      setFlowUser = _useState10[1]; // Compiled authorization code
 
 
   var code = message && signature && universalBase64url.encode(JSON.stringify({
@@ -465,10 +549,10 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
   })) || null; // Subscribe to account change
 
   var addListeners = /*#__PURE__*/function () {
-    var _ref = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(web3ModalProvider) {
-      return _regeneratorRuntime().wrap(function _callee$(_context) {
+    var _ref2 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(web3ModalProvider) {
+      return _regeneratorRuntime().wrap(function _callee2$(_context2) {
         while (1) {
-          switch (_context.prev = _context.next) {
+          switch (_context2.prev = _context2.next) {
             case 0:
               web3ModalProvider.on('accountsChanged', function () {
                 window.location.reload();
@@ -476,47 +560,47 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
             case 1:
             case "end":
-              return _context.stop();
+              return _context2.stop();
           }
         }
-      }, _callee);
+      }, _callee2);
     }));
 
     return function addListeners(_x) {
-      return _ref.apply(this, arguments);
+      return _ref2.apply(this, arguments);
     };
   }(); // Connect MetaMask wallet
 
 
   var connect = /*#__PURE__*/function () {
-    var _ref2 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2() {
+    var _ref3 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3() {
       var provider, ethersProvider, userAddress, userChain, accounts;
-      return _regeneratorRuntime().wrap(function _callee2$(_context2) {
+      return _regeneratorRuntime().wrap(function _callee3$(_context3) {
         while (1) {
-          switch (_context2.prev = _context2.next) {
+          switch (_context3.prev = _context3.next) {
             case 0:
-              _context2.next = 2;
+              _context3.next = 2;
               return web3Modal.connect();
 
             case 2:
-              provider = _context2.sent;
+              provider = _context3.sent;
               addListeners(provider);
               ethersProvider = new ethers.providers.Web3Provider(provider);
-              _context2.next = 7;
+              _context3.next = 7;
               return ethersProvider.getSigner().getAddress();
 
             case 7:
-              userAddress = _context2.sent;
-              _context2.next = 10;
+              userAddress = _context3.sent;
+              _context3.next = 10;
               return ethersProvider.getSigner().getChainId();
 
             case 10:
-              userChain = _context2.sent;
-              _context2.next = 13;
+              userChain = _context3.sent;
+              _context3.next = 13;
               return ethersProvider.listAccounts();
 
             case 13:
-              accounts = _context2.sent;
+              accounts = _context3.sent;
               setLibrary(ethersProvider);
               if (accounts) setAccount(accounts[0]);
               setAddress(userAddress);
@@ -524,16 +608,21 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
             case 18:
             case "end":
-              return _context2.stop();
+              return _context3.stop();
           }
         }
-      }, _callee2);
+      }, _callee3);
     }));
 
     return function connect() {
-      return _ref2.apply(this, arguments);
+      return _ref3.apply(this, arguments);
     };
-  }(); // Clear user state
+  }(); // Connect with Flow wallet
+
+
+  var connectFlow = function connectFlow() {
+    fcl.authenticate();
+  }; // Clear user state
 
 
   var clearUserState = function clearUserState() {
@@ -548,12 +637,12 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
 
   var disconnect = /*#__PURE__*/function () {
-    var _ref3 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3() {
-      return _regeneratorRuntime().wrap(function _callee3$(_context3) {
+    var _ref4 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4() {
+      return _regeneratorRuntime().wrap(function _callee4$(_context4) {
         while (1) {
-          switch (_context3.prev = _context3.next) {
+          switch (_context4.prev = _context4.next) {
             case 0:
-              _context3.next = 2;
+              _context4.next = 2;
               return web3Modal.clearCachedProvider();
 
             case 2:
@@ -562,44 +651,48 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
             case 4:
             case "end":
-              return _context3.stop();
+              return _context4.stop();
           }
         }
-      }, _callee3);
+      }, _callee4);
     }));
 
     return function disconnect() {
-      return _ref3.apply(this, arguments);
+      return _ref4.apply(this, arguments);
     };
-  }(); // Fetch authentication message or access token from the engine API
+  }();
+
+  var disconnectFlow = function disconnectFlow() {
+    fcl.unauthenticate();
+  }; // Fetch authentication message or access token from the engine API
 
 
   var startSession = /*#__PURE__*/function () {
-    var _ref4 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4(userAddress) {
+    var _ref5 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee5(userAddress) {
       var resWithCreds, json;
-      return _regeneratorRuntime().wrap(function _callee4$(_context4) {
+      return _regeneratorRuntime().wrap(function _callee5$(_context5) {
         while (1) {
-          switch (_context4.prev = _context4.next) {
+          switch (_context5.prev = _context5.next) {
             case 0:
-              _context4.next = 2;
+              _context5.next = 2;
               return fetch(ENGINE_URL + "/oauth/session?address=" + userAddress, {
                 method: 'GET',
                 credentials: 'include'
               });
 
             case 2:
-              resWithCreds = _context4.sent;
+              resWithCreds = _context5.sent;
 
               if (!(resWithCreds && resWithCreds.ok)) {
-                _context4.next = 10;
+                _context5.next = 10;
                 break;
               }
 
-              _context4.next = 6;
+              _context5.next = 6;
               return resWithCreds.json();
 
             case 6:
-              json = _context4.sent;
+              json = _context5.sent;
 
               // Set access token if exists
               if (json.access_token) {
@@ -609,7 +702,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
                 setMessage(json.message);
               }
 
-              _context4.next = 11;
+              _context5.next = 11;
               break;
 
             case 10:
@@ -617,74 +710,74 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
             case 11:
             case "end":
-              return _context4.stop();
+              return _context5.stop();
           }
         }
-      }, _callee4);
+      }, _callee5);
     }));
 
     return function startSession(_x2) {
-      return _ref4.apply(this, arguments);
+      return _ref5.apply(this, arguments);
     };
   }(); // Sign authentication message with MetaMask
 
 
   var signMessage = /*#__PURE__*/function () {
-    var _ref5 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee5(lib, msg, userAccount) {
+    var _ref6 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee6(lib, msg, userAccount) {
       var newSignature;
-      return _regeneratorRuntime().wrap(function _callee5$(_context5) {
+      return _regeneratorRuntime().wrap(function _callee6$(_context6) {
         while (1) {
-          switch (_context5.prev = _context5.next) {
+          switch (_context6.prev = _context6.next) {
             case 0:
               if (web3Modal) {
-                _context5.next = 2;
+                _context6.next = 2;
                 break;
               }
 
-              return _context5.abrupt("return");
+              return _context6.abrupt("return");
 
             case 2:
-              _context5.prev = 2;
-              _context5.next = 5;
+              _context6.prev = 2;
+              _context6.next = 5;
               return lib.provider.request({
                 method: 'personal_sign',
                 params: [msg, userAccount]
               });
 
             case 5:
-              newSignature = _context5.sent;
+              newSignature = _context6.sent;
               setSignature(newSignature);
-              _context5.next = 13;
+              _context6.next = 13;
               break;
 
             case 9:
-              _context5.prev = 9;
-              _context5.t0 = _context5["catch"](2);
-              console.error('signMessage error', _context5.t0);
+              _context6.prev = 9;
+              _context6.t0 = _context6["catch"](2);
+              console.error('signMessage error', _context6.t0);
               clearUserState();
 
             case 13:
             case "end":
-              return _context5.stop();
+              return _context6.stop();
           }
         }
-      }, _callee5, null, [[2, 9]]);
+      }, _callee6, null, [[2, 9]]);
     }));
 
     return function signMessage(_x3, _x4, _x5) {
-      return _ref5.apply(this, arguments);
+      return _ref6.apply(this, arguments);
     };
   }(); // Get access token from the engine API
 
 
   var getToken = /*#__PURE__*/function () {
-    var _ref6 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee6(code) {
+    var _ref7 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee7(code) {
       var res, result;
-      return _regeneratorRuntime().wrap(function _callee6$(_context6) {
+      return _regeneratorRuntime().wrap(function _callee7$(_context7) {
         while (1) {
-          switch (_context6.prev = _context6.next) {
+          switch (_context7.prev = _context7.next) {
             case 0:
-              _context6.next = 2;
+              _context7.next = 2;
               return fetch(ENGINE_URL + "/oauth/token?code=" + code, {
                 method: 'POST',
                 headers: {
@@ -696,20 +789,20 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
               });
 
             case 2:
-              res = _context6.sent;
+              res = _context7.sent;
 
               if (!res.ok) {
-                _context6.next = 10;
+                _context7.next = 10;
                 break;
               }
 
-              _context6.next = 6;
+              _context7.next = 6;
               return res.json();
 
             case 6:
-              result = _context6.sent;
+              result = _context7.sent;
               setToken(result);
-              _context6.next = 12;
+              _context7.next = 12;
               break;
 
             case 10:
@@ -718,26 +811,26 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
             case 12:
             case "end":
-              return _context6.stop();
+              return _context7.stop();
           }
         }
-      }, _callee6);
+      }, _callee7);
     }));
 
     return function getToken(_x6) {
-      return _ref6.apply(this, arguments);
+      return _ref7.apply(this, arguments);
     };
   }(); // Set refresh_token cookie
 
 
   var registerAuthSession = /*#__PURE__*/function () {
-    var _ref7 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee7(refresh_token) {
+    var _ref8 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee8(refresh_token) {
       var res;
-      return _regeneratorRuntime().wrap(function _callee7$(_context7) {
+      return _regeneratorRuntime().wrap(function _callee8$(_context8) {
         while (1) {
-          switch (_context7.prev = _context7.next) {
+          switch (_context8.prev = _context8.next) {
             case 0:
-              _context7.next = 2;
+              _context8.next = 2;
               return fetch(ENGINE_URL + "/oauth/session-register", {
                 method: 'POST',
                 credentials: 'include',
@@ -750,44 +843,10 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
               });
 
             case 2:
-              res = _context7.sent;
-
-              if (!res.ok) {
-                console.error('registerAuthSession error', res.status);
-              }
-
-            case 4:
-            case "end":
-              return _context7.stop();
-          }
-        }
-      }, _callee7);
-    }));
-
-    return function registerAuthSession(_x7) {
-      return _ref7.apply(this, arguments);
-    };
-  }(); // Remove refresh_token cookie
-
-
-  var clearAuthSession = /*#__PURE__*/function () {
-    var _ref8 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee8() {
-      var res;
-      return _regeneratorRuntime().wrap(function _callee8$(_context8) {
-        while (1) {
-          switch (_context8.prev = _context8.next) {
-            case 0:
-              _context8.next = 2;
-              return fetch(ENGINE_URL + "/oauth/session-register", {
-                method: 'POST',
-                credentials: 'include'
-              });
-
-            case 2:
               res = _context8.sent;
 
               if (!res.ok) {
-                console.error('clearAuthSession error', res.status);
+                console.error('registerAuthSession error', res.status);
               }
 
             case 4:
@@ -798,11 +857,46 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       }, _callee8);
     }));
 
-    return function clearAuthSession() {
+    return function registerAuthSession(_x7) {
       return _ref8.apply(this, arguments);
     };
-  }(); // Set web3Modal instance
+  }(); // Remove refresh_token cookie
 
+
+  var clearAuthSession = /*#__PURE__*/function () {
+    var _ref9 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee9() {
+      var res;
+      return _regeneratorRuntime().wrap(function _callee9$(_context9) {
+        while (1) {
+          switch (_context9.prev = _context9.next) {
+            case 0:
+              _context9.next = 2;
+              return fetch(ENGINE_URL + "/oauth/session-register", {
+                method: 'POST',
+                credentials: 'include'
+              });
+
+            case 2:
+              res = _context9.sent;
+
+              if (!res.ok) {
+                console.error('clearAuthSession error', res.status);
+              }
+
+            case 4:
+            case "end":
+              return _context9.stop();
+          }
+        }
+      }, _callee9);
+    }));
+
+    return function clearAuthSession() {
+      return _ref9.apply(this, arguments);
+    };
+  }();
+
+  console.log('flowUser', flowUser); // Set web3Modal instance
 
   React.useEffect(function () {
     var providerOptions = {};
@@ -848,7 +942,37 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     if (code && !token) {
       getToken(code);
     }
-  }, [code, token]);
+  }, [code, token]); // subscribe to flow user
+
+  React.useEffect(function () {
+    fcl.currentUser.subscribe(setFlowUser);
+  }, []); // Get authentication token if flow user is proofed
+
+  React.useEffect(function () {
+    var _flowUser$services;
+
+    if (flowUser && flowUser.addr && (_flowUser$services = flowUser.services) != null && _flowUser$services.find(function (service) {
+      return service.type === 'account-proof';
+    })) {
+      var _flowUser$services2;
+
+      var proof = (_flowUser$services2 = flowUser.services) == null ? void 0 : _flowUser$services2.find(function (service) {
+        return service.type === 'account-proof';
+      });
+
+      if (proof && proof.data && proof.data.nonce && proof.data.signatures && proof.data.signatures.length > 0 && proof.data.address) {
+        var _code = universalBase64url.encode(JSON.stringify({
+          type: 'flow',
+          address: proof.data.address,
+          nonce: proof.data.nonce,
+          signature: proof.data.signatures[0].signature
+        }));
+
+        getToken(_code);
+      }
+    }
+  }, [flowUser]);
+  console.log('token', token);
   return React__default.createElement(GrinderyNexusContext.Provider, {
     value: {
       user: user,
@@ -856,11 +980,14 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       chain: chain,
       token: token,
       code: code,
+      flowUser: flowUser,
       connect: connect,
       disconnect: disconnect,
       setUser: setUser,
       setAddress: setAddress,
-      setChain: setChain
+      setChain: setChain,
+      connectFlow: connectFlow,
+      disconnectFlow: disconnectFlow
     }
   }, children);
 };
