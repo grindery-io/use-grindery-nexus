@@ -449,9 +449,10 @@ var accountProofDataResolver = /*#__PURE__*/function () {
 }();
 
 config({
-  //"accessNode.api": "http://rest-testnet.onflow.org",
+  'flow.network': 'mainnet',
+  //"accessNode.api": "http://rest-mainnet.onflow.org",
   'discovery.wallet': 'https://fcl-discovery.onflow.org/testnet/authn',
-  //"discovery.authn.endpoint": "https://fcl-discovery.onflow.org/api/testnet/authn",
+  //"discovery.authn.endpoint": "https://fcl-discovery.onflow.org/api/mainnet/authn",
   //"discovery.authn.include": ["0x82ec283f88a62e65", "0x9d2e44203cb13051"], // Service account address
   'app.detail.title': 'Grindery Nexus',
   'app.detail.icon': 'https://nexus.grindery.org/static/media/nexus-square.7402bdeb27ab56504250ca409fac38bd.svg',
@@ -472,8 +473,7 @@ var defaultContext = {
   setUser: function setUser() {},
   setAddress: function setAddress() {},
   setChain: function setChain() {},
-  connectFlow: function connectFlow() {},
-  disconnectFlow: function disconnectFlow() {}
+  connectFlow: function connectFlow() {}
 };
 /** Grindery Nexus Context */
 
@@ -567,7 +567,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
   var connect = /*#__PURE__*/function () {
     var _ref3 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3() {
-      var provider, ethersProvider, userAddress, userChain, accounts;
+      var provider, ethersProvider, userAddress, accounts;
       return _regeneratorRuntime().wrap(function _callee3$(_context3) {
         while (1) {
           switch (_context3.prev = _context3.next) {
@@ -585,21 +585,16 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
             case 7:
               userAddress = _context3.sent;
               _context3.next = 10;
-              return ethersProvider.getSigner().getChainId();
-
-            case 10:
-              userChain = _context3.sent;
-              _context3.next = 13;
               return ethersProvider.listAccounts();
 
-            case 13:
+            case 10:
               accounts = _context3.sent;
               setLibrary(ethersProvider);
               if (accounts) setAccount(accounts[0]);
               setAddress(userAddress);
-              setChain(userChain);
+              setChain('eip155:1');
 
-            case 18:
+            case 15:
             case "end":
               return _context3.stop();
           }
@@ -642,7 +637,11 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
               clearUserState();
               clearAuthSession();
 
-            case 4:
+              if (flowUser) {
+                unauthenticate();
+              }
+
+            case 5:
             case "end":
               return _context4.stop();
           }
@@ -653,11 +652,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     return function disconnect() {
       return _ref4.apply(this, arguments);
     };
-  }();
-
-  var disconnectFlow = function disconnectFlow() {
-    unauthenticate();
-  }; // Fetch authentication message or access token from the engine API
+  }(); // Fetch authentication message or access token from the engine API
 
 
   var startSession = /*#__PURE__*/function () {
@@ -764,7 +759,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
 
   var getToken = /*#__PURE__*/function () {
-    var _ref7 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee7(code) {
+    var _ref7 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee7(code, blockchain) {
       var res, result;
       return _regeneratorRuntime().wrap(function _callee7$(_context7) {
         while (1) {
@@ -785,7 +780,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
               res = _context7.sent;
 
               if (!res.ok) {
-                _context7.next = 10;
+                _context7.next = 11;
                 break;
               }
 
@@ -794,15 +789,21 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
             case 6:
               result = _context7.sent;
+
+              if (blockchain && blockchain === 'flow') {
+                setAddress(flowUser && flowUser.addr || null);
+                setChain('flow:mainnet');
+              }
+
               setToken(result);
-              _context7.next = 12;
+              _context7.next = 13;
               break;
 
-            case 10:
+            case 11:
               console.error('getToken error', res.status);
               clearUserState();
 
-            case 12:
+            case 13:
             case "end":
               return _context7.stop();
           }
@@ -810,7 +811,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       }, _callee7);
     }));
 
-    return function getToken(_x6) {
+    return function getToken(_x6, _x7) {
       return _ref7.apply(this, arguments);
     };
   }(); // Set refresh_token cookie
@@ -850,7 +851,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       }, _callee8);
     }));
 
-    return function registerAuthSession(_x7) {
+    return function registerAuthSession(_x8) {
       return _ref8.apply(this, arguments);
     };
   }(); // Remove refresh_token cookie
@@ -887,9 +888,8 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     return function clearAuthSession() {
       return _ref9.apply(this, arguments);
     };
-  }();
+  }(); // Set web3Modal instance
 
-  console.log('flowUser', flowUser); // Set web3Modal instance
 
   useEffect(function () {
     var providerOptions = {};
@@ -908,8 +908,8 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
   }, [web3Modal]); // set user if token and address is known
 
   useEffect(function () {
-    if (address && token && token.access_token) {
-      setUser("eip155:1:" + address);
+    if (address && token && token.access_token && chain) {
+      setUser(chain + ":" + address);
 
       if (token.refresh_token) {
         registerAuthSession(token.refresh_token);
@@ -917,7 +917,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     } else {
       setUser(null);
     }
-  }, [token, address]); // Start session if user address is known
+  }, [token, address, chain]); // Start session if user address is known
 
   useEffect(function () {
     if (address && !message && !signature && !token) {
@@ -958,14 +958,13 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
           type: 'flow',
           address: proof.data.address,
           nonce: proof.data.nonce,
-          signature: proof.data.signatures[0].signature
+          signatures: proof.data.signatures
         }));
 
-        getToken(_code);
+        getToken(_code, 'flow');
       }
     }
   }, [flowUser]);
-  console.log('token', token);
   return React.createElement(GrinderyNexusContext.Provider, {
     value: {
       user: user,
@@ -979,8 +978,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       setUser: setUser,
       setAddress: setAddress,
       setChain: setChain,
-      connectFlow: connectFlow,
-      disconnectFlow: disconnectFlow
+      connectFlow: connectFlow
     }
   }, children);
 };

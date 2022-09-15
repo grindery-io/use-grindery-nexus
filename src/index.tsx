@@ -48,9 +48,10 @@ const accountProofDataResolver: AccountProofDataResolver = async () => {
 };
 
 fcl.config({
-  //"accessNode.api": "http://rest-testnet.onflow.org",
+  'flow.network': 'mainnet',
+  //"accessNode.api": "http://rest-mainnet.onflow.org",
   'discovery.wallet': 'https://fcl-discovery.onflow.org/testnet/authn',
-  //"discovery.authn.endpoint": "https://fcl-discovery.onflow.org/api/testnet/authn",
+  //"discovery.authn.endpoint": "https://fcl-discovery.onflow.org/api/mainnet/authn",
   //"discovery.authn.include": ["0x82ec283f88a62e65", "0x9d2e44203cb13051"], // Service account address
   'app.detail.title': 'Grindery Nexus',
   'app.detail.icon':
@@ -83,7 +84,7 @@ export type GrinderyNexusContextProps = {
   address: string | null;
 
   /** User chain id  */
-  chain: number | null;
+  chain: number | string | null;
 
   /** Authorization code */
   code: string | null;
@@ -103,13 +104,10 @@ export type GrinderyNexusContextProps = {
   setAddress: React.Dispatch<React.SetStateAction<string | null>>;
 
   /** Set user chain id  */
-  setChain: React.Dispatch<React.SetStateAction<number | null>>;
+  setChain: React.Dispatch<React.SetStateAction<number | string | null>>;
 
   /** Connect flow user */
   connectFlow: () => void;
-
-  /** Disconnect Flow user */
-  disconnectFlow: () => void;
 };
 
 export type GrinderyNexusContextProviderProps = {
@@ -133,7 +131,6 @@ const defaultContext = {
   setAddress: () => {},
   setChain: () => {},
   connectFlow: () => {},
-  disconnectFlow: () => {},
 };
 
 /** Grindery Nexus Context */
@@ -165,7 +162,7 @@ export const GrinderyNexusContextProvider = (
   const [address, setAddress] = useState<string | null>(null);
 
   // User chain id
-  const [chain, setChain] = useState<number | null>(null);
+  const [chain, setChain] = useState<number | string | null>(null);
 
   // Auth message
   const [message, setMessage] = useState<string | null>(null);
@@ -204,12 +201,12 @@ export const GrinderyNexusContextProvider = (
     addListeners(provider);
     const ethersProvider = new providers.Web3Provider(provider);
     const userAddress = await ethersProvider.getSigner().getAddress();
-    const userChain = await ethersProvider.getSigner().getChainId();
+    //const userChain = await ethersProvider.getSigner().getChainId();
     const accounts = await ethersProvider.listAccounts();
     setLibrary(ethersProvider);
     if (accounts) setAccount(accounts[0]);
     setAddress(userAddress);
-    setChain(userChain);
+    setChain('eip155:1');
   };
 
   // Connect with Flow wallet
@@ -233,10 +230,9 @@ export const GrinderyNexusContextProvider = (
     await web3Modal.clearCachedProvider();
     clearUserState();
     clearAuthSession();
-  };
-
-  const disconnectFlow = () => {
-    fcl.unauthenticate();
+    if (flowUser) {
+      fcl.unauthenticate();
+    }
   };
 
   // Fetch authentication message or access token from the engine API
@@ -283,7 +279,7 @@ export const GrinderyNexusContextProvider = (
   };
 
   // Get access token from the engine API
-  const getToken = async (code: string) => {
+  const getToken = async (code: string, blockchain?: string) => {
     const res = await fetch(`${ENGINE_URL}/oauth/token?code=${code}`, {
       method: 'POST',
       headers: {
@@ -296,6 +292,10 @@ export const GrinderyNexusContextProvider = (
 
     if (res.ok) {
       let result = await res.json();
+      if (blockchain && blockchain === 'flow') {
+        setAddress((flowUser && flowUser.addr) || null);
+        setChain('flow:mainnet');
+      }
       setToken(result);
     } else {
       console.error('getToken error', res.status);
@@ -333,8 +333,6 @@ export const GrinderyNexusContextProvider = (
     }
   };
 
-  console.log('flowUser', flowUser);
-
   // Set web3Modal instance
   useEffect(() => {
     const providerOptions = {};
@@ -355,15 +353,15 @@ export const GrinderyNexusContextProvider = (
 
   // set user if token and address is known
   useEffect(() => {
-    if (address && token && token.access_token) {
-      setUser(`eip155:1:${address}`);
+    if (address && token && token.access_token && chain) {
+      setUser(`${chain}:${address}`);
       if (token.refresh_token) {
         registerAuthSession(token.refresh_token);
       }
     } else {
       setUser(null);
     }
-  }, [token, address]);
+  }, [token, address, chain]);
 
   // Start session if user address is known
   useEffect(() => {
@@ -414,15 +412,13 @@ export const GrinderyNexusContextProvider = (
             type: 'flow',
             address: proof.data.address,
             nonce: proof.data.nonce,
-            signature: proof.data.signatures[0].signature,
+            signatures: proof.data.signatures,
           })
         );
-        getToken(code);
+        getToken(code, 'flow');
       }
     }
   }, [flowUser]);
-
-  console.log('token', token);
 
   return (
     <GrinderyNexusContext.Provider
@@ -439,7 +435,6 @@ export const GrinderyNexusContextProvider = (
         setAddress,
         setChain,
         connectFlow,
-        disconnectFlow,
       }}
     >
       {children}

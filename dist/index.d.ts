@@ -18,7 +18,7 @@ export declare type GrinderyNexusContextProps = {
     /** User wallet address  */
     address: string | null;
     /** User chain id  */
-    chain: number | null;
+    chain: number | string | null;
     /** Authorization code */
     code: string | null;
     flowUser: FlowUser;
@@ -31,11 +31,9 @@ export declare type GrinderyNexusContextProps = {
     /** Set user wallet address  */
     setAddress: React.Dispatch<React.SetStateAction<string | null>>;
     /** Set user chain id  */
-    setChain: React.Dispatch<React.SetStateAction<number | null>>;
+    setChain: React.Dispatch<React.SetStateAction<number | string | null>>;
     /** Connect flow user */
     connectFlow: () => void;
-    /** Disconnect Flow user */
-    disconnectFlow: () => void;
 };
 export declare type GrinderyNexusContextProviderProps = {
     children: React.ReactNode;
