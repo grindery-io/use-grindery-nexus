@@ -199,6 +199,11 @@ export const GrinderyNexusContextProvider = (
     web3ModalProvider.on('accountsChanged', () => {
       window.location.reload();
     });
+
+    web3ModalProvider.on('disconnect', async () => {
+      await web3Modal.clearCachedProvider();
+      disconnect();
+    });
   };
 
   // Connect MetaMask wallet
