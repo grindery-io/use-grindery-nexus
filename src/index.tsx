@@ -10,6 +10,7 @@ import * as fcl from '@onflow/fcl';
 
 export const ENGINE_URL = 'https://orchestrator.grindery.org';
 
+// Flow authentication account proof data type
 type AccountProofData = {
   // e.g. "Awesome App (v0.0)" - A human readable string to identify your application during signing
   appIdentifier: string;
@@ -18,8 +19,10 @@ type AccountProofData = {
   nonce: string;
 };
 
+// Flow auth account proof data resolver type
 type AccountProofDataResolver = () => Promise<AccountProofData | null>;
 
+// Flow auth account proof data resolver
 const accountProofDataResolver: AccountProofDataResolver = async () => {
   const resWithCreds = await fetch(`${ENGINE_URL}/oauth/flow-get-nonce`, {
     method: 'GET',
@@ -47,6 +50,7 @@ const accountProofDataResolver: AccountProofDataResolver = async () => {
   }
 };
 
+// Flow auth config
 fcl.config({
   'flow.network': 'mainnet',
   //"accessNode.api": "http://rest-mainnet.onflow.org",
@@ -67,6 +71,7 @@ export type AuthToken = {
   token_type: string;
 };
 
+// Flow user type
 type FlowUser = {
   addr: string;
   services?: any[];
@@ -89,6 +94,7 @@ export type GrinderyNexusContextProps = {
   /** Authorization code */
   code: string | null;
 
+  /** Flow user object */
   flowUser: FlowUser;
 
   /** Connect user wallet */
@@ -384,7 +390,7 @@ export const GrinderyNexusContextProvider = (
     }
   }, [code, token]);
 
-  // subscribe to flow user
+  // subscribe to flow user update
   useEffect(() => {
     fcl.currentUser.subscribe(setFlowUser);
   }, []);

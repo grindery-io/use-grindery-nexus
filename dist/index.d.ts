@@ -21,6 +21,7 @@ export declare type GrinderyNexusContextProps = {
     chain: number | string | null;
     /** Authorization code */
     code: string | null;
+    /** Flow user object */
     flowUser: FlowUser;
     /** Connect user wallet */
     connect: () => void;

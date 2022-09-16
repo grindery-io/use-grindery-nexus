@@ -392,7 +392,7 @@ function _asyncToGenerator(fn) {
   };
 }
 
-var ENGINE_URL = 'https://orchestrator.grindery.org';
+var ENGINE_URL = 'https://orchestrator.grindery.org'; // Flow auth account proof data resolver
 
 var accountProofDataResolver = /*#__PURE__*/function () {
   var _ref = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
@@ -453,7 +453,8 @@ var accountProofDataResolver = /*#__PURE__*/function () {
   return function accountProofDataResolver() {
     return _ref.apply(this, arguments);
   };
-}();
+}(); // Flow auth config
+
 
 fcl.config({
   'flow.network': 'mainnet',
@@ -942,7 +943,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     if (code && !token) {
       getToken(code);
     }
-  }, [code, token]); // subscribe to flow user
+  }, [code, token]); // subscribe to flow user update
 
   React.useEffect(function () {
     fcl.currentUser.subscribe(setFlowUser);
