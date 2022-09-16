@@ -24,10 +24,13 @@ type AccountProofDataResolver = () => Promise<AccountProofData | null>;
 
 // Flow auth account proof data resolver
 const accountProofDataResolver: AccountProofDataResolver = async () => {
-  const resWithCreds = await fetch(`${ENGINE_URL}/oauth/flow-get-nonce`, {
-    method: 'GET',
-    credentials: 'include',
-  });
+  const resWithCreds = await fetch(
+    `${ENGINE_URL}/oauth/flow-get-nonce?v=${Math.floor(Date.now() / 1000)}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+    }
+  );
 
   if (resWithCreds && resWithCreds.ok) {
     let json = await resWithCreds.json();
@@ -234,16 +237,17 @@ export const GrinderyNexusContextProvider = (
     setMessage(null);
     setToken(null);
     setSignature(null);
+    setFlowUser({ addr: '' });
   };
 
   // Disconnect user
   const disconnect = async () => {
     await web3Modal.clearCachedProvider();
-    clearUserState();
-    clearAuthSession();
-    if (flowUser) {
+    if (flowUser && flowUser.addr) {
       fcl.unauthenticate();
     }
+    clearUserState();
+    clearAuthSession();
   };
 
   // Fetch authentication message or access token from the engine API

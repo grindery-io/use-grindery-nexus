@@ -395,7 +395,7 @@ var accountProofDataResolver = /*#__PURE__*/function () {
         switch (_context.prev = _context.next) {
           case 0:
             _context.next = 2;
-            return fetch(ENGINE_URL + "/oauth/flow-get-nonce", {
+            return fetch(ENGINE_URL + "/oauth/flow-get-nonce?v=" + Math.floor(Date.now() / 1000), {
               method: 'GET',
               credentials: 'include'
             });
@@ -640,6 +640,9 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     setMessage(null);
     setToken(null);
     setSignature(null);
+    setFlowUser({
+      addr: ''
+    });
   }; // Disconnect user
 
 
@@ -653,12 +656,12 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
               return web3Modal.clearCachedProvider();
 
             case 2:
-              clearUserState();
-              clearAuthSession();
-
-              if (flowUser) {
+              if (flowUser && flowUser.addr) {
                 unauthenticate();
               }
+
+              clearUserState();
+              clearAuthSession();
 
             case 5:
             case "end":
