@@ -311,6 +311,7 @@ export const GrinderyNexusContextProvider = (
     } else {
       console.error('getToken error', res.status);
       clearUserState();
+      disconnect();
     }
   };
 

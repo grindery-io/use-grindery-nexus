@@ -822,14 +822,15 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
               }
 
               setToken(result);
-              _context8.next = 13;
+              _context8.next = 14;
               break;
 
             case 11:
               console.error('getToken error', res.status);
               clearUserState();
+              disconnect();
 
-            case 13:
+            case 14:
             case "end":
               return _context8.stop();
           }
