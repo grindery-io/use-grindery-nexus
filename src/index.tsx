@@ -24,18 +24,15 @@ type AccountProofDataResolver = () => Promise<AccountProofData | null>;
 
 // Flow auth account proof data resolver
 const accountProofDataResolver: AccountProofDataResolver = async () => {
-  const resWithCreds = await fetch(
-    `${ENGINE_URL}/oauth/flow-get-nonce?v=${Math.floor(Date.now() / 1000)}`,
-    {
-      method: 'GET',
-      credentials: 'include',
-    }
-  );
+  const res = await fetch(`${ENGINE_URL}/oauth/flow-get-nonce`, {
+    method: 'GET',
+    credentials: 'include',
+  });
 
-  if (resWithCreds && resWithCreds.ok) {
-    let json = await resWithCreds.json();
+  if (res && res.ok) {
+    let json = await res.json();
 
-    // Set access token if exists
+    // Return nonce on success
     if (json.nonce) {
       return {
         appIdentifier: 'Grindery Nexus',
@@ -45,10 +42,7 @@ const accountProofDataResolver: AccountProofDataResolver = async () => {
       throw new Error('get nonce failed');
     }
   } else {
-    console.error(
-      'getFlowNonce error',
-      (resWithCreds && resWithCreds.status) || 'Unknown error'
-    );
+    console.error('getFlowNonce error', (res && res.status) || 'Unknown error');
     throw new Error('get nonce failed');
   }
 };
@@ -56,10 +50,7 @@ const accountProofDataResolver: AccountProofDataResolver = async () => {
 // Flow auth config
 fcl.config({
   'flow.network': 'mainnet',
-  //"accessNode.api": "http://rest-mainnet.onflow.org",
   'discovery.wallet': 'https://fcl-discovery.onflow.org/testnet/authn',
-  //"discovery.authn.endpoint": "https://fcl-discovery.onflow.org/api/mainnet/authn",
-  //"discovery.authn.include": ["0x82ec283f88a62e65", "0x9d2e44203cb13051"], // Service account address
   'app.detail.title': 'Grindery Nexus',
   'app.detail.icon':
     'https://nexus.grindery.org/static/media/nexus-square.7402bdeb27ab56504250ca409fac38bd.svg',
@@ -220,6 +211,7 @@ export const GrinderyNexusContextProvider = (
     setLibrary(ethersProvider);
     if (accounts) setAccount(accounts[0]);
     setAddress(userAddress);
+    // For EVM wallet always set Ethereum chain
     setChain('eip155:1');
   };
 

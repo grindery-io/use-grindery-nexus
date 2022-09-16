@@ -389,27 +389,27 @@ var ENGINE_URL = 'https://orchestrator.grindery.org'; // Flow auth account proof
 
 var accountProofDataResolver = /*#__PURE__*/function () {
   var _ref = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
-    var resWithCreds, json;
+    var res, json;
     return _regeneratorRuntime().wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
             _context.next = 2;
-            return fetch(ENGINE_URL + "/oauth/flow-get-nonce?v=" + Math.floor(Date.now() / 1000), {
+            return fetch(ENGINE_URL + "/oauth/flow-get-nonce", {
               method: 'GET',
               credentials: 'include'
             });
 
           case 2:
-            resWithCreds = _context.sent;
+            res = _context.sent;
 
-            if (!(resWithCreds && resWithCreds.ok)) {
+            if (!(res && res.ok)) {
               _context.next = 14;
               break;
             }
 
             _context.next = 6;
-            return resWithCreds.json();
+            return res.json();
 
           case 6:
             json = _context.sent;
@@ -432,7 +432,7 @@ var accountProofDataResolver = /*#__PURE__*/function () {
             break;
 
           case 14:
-            console.error('getFlowNonce error', resWithCreds && resWithCreds.status || 'Unknown error');
+            console.error('getFlowNonce error', res && res.status || 'Unknown error');
             throw new Error('get nonce failed');
 
           case 16:
@@ -451,10 +451,7 @@ var accountProofDataResolver = /*#__PURE__*/function () {
 
 config({
   'flow.network': 'mainnet',
-  //"accessNode.api": "http://rest-mainnet.onflow.org",
   'discovery.wallet': 'https://fcl-discovery.onflow.org/testnet/authn',
-  //"discovery.authn.endpoint": "https://fcl-discovery.onflow.org/api/mainnet/authn",
-  //"discovery.authn.include": ["0x82ec283f88a62e65", "0x9d2e44203cb13051"], // Service account address
   'app.detail.title': 'Grindery Nexus',
   'app.detail.icon': 'https://nexus.grindery.org/static/media/nexus-square.7402bdeb27ab56504250ca409fac38bd.svg',
   'fcl.accountProof.resolver': accountProofDataResolver
@@ -610,7 +607,8 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
               accounts = _context4.sent;
               setLibrary(ethersProvider);
               if (accounts) setAccount(accounts[0]);
-              setAddress(userAddress);
+              setAddress(userAddress); // For EVM wallet always set Ethereum chain
+
               setChain('eip155:1');
 
             case 15:
