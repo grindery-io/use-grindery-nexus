@@ -385,76 +385,13 @@ function _asyncToGenerator(fn) {
   };
 }
 
-var ENGINE_URL = 'https://orchestrator.grindery.org'; // Flow auth account proof data resolver
-
-var accountProofDataResolver = /*#__PURE__*/function () {
-  var _ref = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
-    var res, json;
-    return _regeneratorRuntime().wrap(function _callee$(_context) {
-      while (1) {
-        switch (_context.prev = _context.next) {
-          case 0:
-            _context.next = 2;
-            return fetch(ENGINE_URL + "/oauth/flow-get-nonce", {
-              method: 'GET',
-              credentials: 'include'
-            });
-
-          case 2:
-            res = _context.sent;
-
-            if (!(res && res.ok)) {
-              _context.next = 14;
-              break;
-            }
-
-            _context.next = 6;
-            return res.json();
-
-          case 6:
-            json = _context.sent;
-
-            if (!json.nonce) {
-              _context.next = 11;
-              break;
-            }
-
-            return _context.abrupt("return", {
-              appIdentifier: 'Grindery Nexus',
-              nonce: json.nonce
-            });
-
-          case 11:
-            throw new Error('get nonce failed');
-
-          case 12:
-            _context.next = 16;
-            break;
-
-          case 14:
-            console.error('getFlowNonce error', res && res.status || 'Unknown error');
-            throw new Error('get nonce failed');
-
-          case 16:
-          case "end":
-            return _context.stop();
-        }
-      }
-    }, _callee);
-  }));
-
-  return function accountProofDataResolver() {
-    return _ref.apply(this, arguments);
-  };
-}(); // Flow auth config
-
+var ENGINE_URL = 'https://orchestrator.grindery.org'; // Flow auth config
 
 config({
   'flow.network': 'mainnet',
   'discovery.wallet': 'https://fcl-discovery.onflow.org/testnet/authn',
   'app.detail.title': 'Grindery Nexus',
-  'app.detail.icon': 'https://nexus.grindery.org/static/media/nexus-square.7402bdeb27ab56504250ca409fac38bd.svg',
-  'fcl.accountProof.resolver': accountProofDataResolver
+  'app.detail.icon': 'https://nexus.grindery.org/static/media/nexus-square.7402bdeb27ab56504250ca409fac38bd.svg'
 }); // Default context properties
 
 var defaultContext = {
@@ -479,6 +416,8 @@ var GrinderyNexusContext = /*#__PURE__*/createContext(defaultContext);
 /** Grindery Nexus Context Provider */
 
 var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) {
+  var _flowUser$services;
+
   var children = props.children;
   var cacheProvider = typeof props.cacheProvider !== 'undefined' ? props.cacheProvider : true; // Web3Modal instance
 
@@ -531,29 +470,42 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     addr: ''
   }),
       flowUser = _useState10[0],
-      setFlowUser = _useState10[1]; // Compiled authorization code
+      setFlowUser = _useState10[1]; // Is Flow account resolver called
 
+
+  var _useState11 = useState(false),
+      resolverCalled = _useState11[0],
+      setResolverCalled = _useState11[1];
+
+  var flowProof = flowUser && flowUser.addr && ((_flowUser$services = flowUser.services) == null ? void 0 : _flowUser$services.find(function (service) {
+    return service.type === 'account-proof';
+  })); // Compiled authorization code
 
   var code = message && signature && encode(JSON.stringify({
     message: message,
     signature: signature
+  })) || flowProof && flowProof.data && flowProof.data.nonce && flowProof.data.signatures && flowProof.data.signatures.length > 0 && flowProof.data.address && resolverCalled && encode(JSON.stringify({
+    type: 'flow',
+    address: flowProof.data.address,
+    nonce: flowProof.data.nonce,
+    signatures: flowProof.data.signatures
   })) || null; // Subscribe to account change
 
   var addListeners = /*#__PURE__*/function () {
-    var _ref2 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3(web3ModalProvider) {
-      return _regeneratorRuntime().wrap(function _callee3$(_context3) {
+    var _ref = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(web3ModalProvider) {
+      return _regeneratorRuntime().wrap(function _callee2$(_context2) {
         while (1) {
-          switch (_context3.prev = _context3.next) {
+          switch (_context2.prev = _context2.next) {
             case 0:
               web3ModalProvider.on('accountsChanged', function () {
                 window.location.reload();
               });
-              web3ModalProvider.on('disconnect', /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2() {
-                return _regeneratorRuntime().wrap(function _callee2$(_context2) {
+              web3ModalProvider.on('disconnect', /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
+                return _regeneratorRuntime().wrap(function _callee$(_context) {
                   while (1) {
-                    switch (_context2.prev = _context2.next) {
+                    switch (_context.prev = _context.next) {
                       case 0:
-                        _context2.next = 2;
+                        _context.next = 2;
                         return web3Modal.clearCachedProvider();
 
                       case 2:
@@ -561,50 +513,50 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
                       case 3:
                       case "end":
-                        return _context2.stop();
+                        return _context.stop();
                     }
                   }
-                }, _callee2);
+                }, _callee);
               })));
 
             case 2:
             case "end":
-              return _context3.stop();
+              return _context2.stop();
           }
         }
-      }, _callee3);
+      }, _callee2);
     }));
 
     return function addListeners(_x) {
-      return _ref2.apply(this, arguments);
+      return _ref.apply(this, arguments);
     };
   }(); // Connect MetaMask wallet
 
 
   var connect = /*#__PURE__*/function () {
-    var _ref4 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4() {
+    var _ref3 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3() {
       var provider, ethersProvider, userAddress, accounts;
-      return _regeneratorRuntime().wrap(function _callee4$(_context4) {
+      return _regeneratorRuntime().wrap(function _callee3$(_context3) {
         while (1) {
-          switch (_context4.prev = _context4.next) {
+          switch (_context3.prev = _context3.next) {
             case 0:
-              _context4.next = 2;
+              _context3.next = 2;
               return web3Modal.connect();
 
             case 2:
-              provider = _context4.sent;
+              provider = _context3.sent;
               addListeners(provider);
               ethersProvider = new providers.Web3Provider(provider);
-              _context4.next = 7;
+              _context3.next = 7;
               return ethersProvider.getSigner().getAddress();
 
             case 7:
-              userAddress = _context4.sent;
-              _context4.next = 10;
+              userAddress = _context3.sent;
+              _context3.next = 10;
               return ethersProvider.listAccounts();
 
             case 10:
-              accounts = _context4.sent;
+              accounts = _context3.sent;
               setLibrary(ethersProvider);
               if (accounts) setAccount(accounts[0]);
               setAddress(userAddress); // For EVM wallet always set Ethereum chain
@@ -613,14 +565,14 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
             case 15:
             case "end":
-              return _context4.stop();
+              return _context3.stop();
           }
         }
-      }, _callee4);
+      }, _callee3);
     }));
 
     return function connect() {
-      return _ref4.apply(this, arguments);
+      return _ref3.apply(this, arguments);
     };
   }(); // Connect with Flow wallet
 
@@ -645,12 +597,12 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
 
   var disconnect = /*#__PURE__*/function () {
-    var _ref5 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee5() {
-      return _regeneratorRuntime().wrap(function _callee5$(_context5) {
+    var _ref4 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4() {
+      return _regeneratorRuntime().wrap(function _callee4$(_context4) {
         while (1) {
-          switch (_context5.prev = _context5.next) {
+          switch (_context4.prev = _context4.next) {
             case 0:
-              _context5.next = 2;
+              _context4.next = 2;
               return web3Modal.clearCachedProvider();
 
             case 2:
@@ -663,44 +615,44 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
             case 5:
             case "end":
-              return _context5.stop();
+              return _context4.stop();
           }
         }
-      }, _callee5);
+      }, _callee4);
     }));
 
     return function disconnect() {
-      return _ref5.apply(this, arguments);
+      return _ref4.apply(this, arguments);
     };
   }(); // Fetch authentication message or access token from the engine API
 
 
   var startSession = /*#__PURE__*/function () {
-    var _ref6 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee6(userAddress) {
+    var _ref5 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee5(userAddress) {
       var resWithCreds, json;
-      return _regeneratorRuntime().wrap(function _callee6$(_context6) {
+      return _regeneratorRuntime().wrap(function _callee5$(_context5) {
         while (1) {
-          switch (_context6.prev = _context6.next) {
+          switch (_context5.prev = _context5.next) {
             case 0:
-              _context6.next = 2;
+              _context5.next = 2;
               return fetch(ENGINE_URL + "/oauth/session?address=" + userAddress, {
                 method: 'GET',
                 credentials: 'include'
               });
 
             case 2:
-              resWithCreds = _context6.sent;
+              resWithCreds = _context5.sent;
 
               if (!(resWithCreds && resWithCreds.ok)) {
-                _context6.next = 10;
+                _context5.next = 10;
                 break;
               }
 
-              _context6.next = 6;
+              _context5.next = 6;
               return resWithCreds.json();
 
             case 6:
-              json = _context6.sent;
+              json = _context5.sent;
 
               // Set access token if exists
               if (json.access_token) {
@@ -710,7 +662,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
                 setMessage(json.message);
               }
 
-              _context6.next = 11;
+              _context5.next = 11;
               break;
 
             case 10:
@@ -718,74 +670,74 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
             case 11:
             case "end":
-              return _context6.stop();
+              return _context5.stop();
           }
         }
-      }, _callee6);
+      }, _callee5);
     }));
 
     return function startSession(_x2) {
-      return _ref6.apply(this, arguments);
+      return _ref5.apply(this, arguments);
     };
   }(); // Sign authentication message with MetaMask
 
 
   var signMessage = /*#__PURE__*/function () {
-    var _ref7 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee7(lib, msg, userAccount) {
+    var _ref6 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee6(lib, msg, userAccount) {
       var newSignature;
-      return _regeneratorRuntime().wrap(function _callee7$(_context7) {
+      return _regeneratorRuntime().wrap(function _callee6$(_context6) {
         while (1) {
-          switch (_context7.prev = _context7.next) {
+          switch (_context6.prev = _context6.next) {
             case 0:
               if (web3Modal) {
-                _context7.next = 2;
+                _context6.next = 2;
                 break;
               }
 
-              return _context7.abrupt("return");
+              return _context6.abrupt("return");
 
             case 2:
-              _context7.prev = 2;
-              _context7.next = 5;
+              _context6.prev = 2;
+              _context6.next = 5;
               return lib.provider.request({
                 method: 'personal_sign',
                 params: [msg, userAccount]
               });
 
             case 5:
-              newSignature = _context7.sent;
+              newSignature = _context6.sent;
               setSignature(newSignature);
-              _context7.next = 13;
+              _context6.next = 13;
               break;
 
             case 9:
-              _context7.prev = 9;
-              _context7.t0 = _context7["catch"](2);
-              console.error('signMessage error', _context7.t0);
+              _context6.prev = 9;
+              _context6.t0 = _context6["catch"](2);
+              console.error('signMessage error', _context6.t0);
               clearUserState();
 
             case 13:
             case "end":
-              return _context7.stop();
+              return _context6.stop();
           }
         }
-      }, _callee7, null, [[2, 9]]);
+      }, _callee6, null, [[2, 9]]);
     }));
 
     return function signMessage(_x3, _x4, _x5) {
-      return _ref7.apply(this, arguments);
+      return _ref6.apply(this, arguments);
     };
   }(); // Get access token from the engine API
 
 
   var getToken = /*#__PURE__*/function () {
-    var _ref8 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee8(code, blockchain) {
+    var _ref7 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee7(code) {
       var res, result;
-      return _regeneratorRuntime().wrap(function _callee8$(_context8) {
+      return _regeneratorRuntime().wrap(function _callee7$(_context7) {
         while (1) {
-          switch (_context8.prev = _context8.next) {
+          switch (_context7.prev = _context7.next) {
             case 0:
-              _context8.next = 2;
+              _context7.next = 2;
               return fetch(ENGINE_URL + "/oauth/token?code=" + code, {
                 method: 'POST',
                 headers: {
@@ -797,55 +749,80 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
               });
 
             case 2:
-              res = _context8.sent;
+              res = _context7.sent;
 
               if (!res.ok) {
-                _context8.next = 11;
+                _context7.next = 11;
                 break;
               }
 
-              _context8.next = 6;
+              _context7.next = 6;
               return res.json();
 
             case 6:
-              result = _context8.sent;
+              result = _context7.sent;
 
-              if (blockchain && blockchain === 'flow') {
+              // Set address and chain if Flow user proofed
+              if (flowProof) {
                 setAddress(flowUser && flowUser.addr || null);
                 setChain('flow:mainnet');
               }
 
               setToken(result);
-              _context8.next = 14;
+              _context7.next = 25;
               break;
 
             case 11:
-              console.error('getToken error', res.status);
+              console.error('getToken error', res.status); // handle expried nonce for Flow user
+
+              if (!flowProof) {
+                _context7.next = 23;
+                break;
+              }
+
+              _context7.prev = 13;
+              _context7.next = 16;
+              return disconnect();
+
+            case 16:
+              _context7.next = 20;
+              break;
+
+            case 18:
+              _context7.prev = 18;
+              _context7.t0 = _context7["catch"](13);
+
+            case 20:
+              authenticate();
+              _context7.next = 25;
+              break;
+
+            case 23:
               clearUserState();
               disconnect();
 
-            case 14:
+            case 25:
             case "end":
-              return _context8.stop();
+              return _context7.stop();
           }
         }
-      }, _callee8);
+      }, _callee7, null, [[13, 18]]);
     }));
 
-    return function getToken(_x6, _x7) {
-      return _ref8.apply(this, arguments);
+    return function getToken(_x6) {
+      return _ref7.apply(this, arguments);
     };
   }(); // Set refresh_token cookie
 
 
   var registerAuthSession = /*#__PURE__*/function () {
-    var _ref9 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee9(refresh_token) {
+    var _ref8 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee8(refresh_token) {
       var res;
-      return _regeneratorRuntime().wrap(function _callee9$(_context9) {
+      return _regeneratorRuntime().wrap(function _callee8$(_context8) {
         while (1) {
-          switch (_context9.prev = _context9.next) {
+          switch (_context8.prev = _context8.next) {
             case 0:
-              _context9.next = 2;
+              _context8.next = 2;
               return fetch(ENGINE_URL + "/oauth/session-register", {
                 method: 'POST',
                 credentials: 'include',
@@ -858,10 +835,44 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
               });
 
             case 2:
-              res = _context9.sent;
+              res = _context8.sent;
 
               if (!res.ok) {
                 console.error('registerAuthSession error', res.status);
+              }
+
+            case 4:
+            case "end":
+              return _context8.stop();
+          }
+        }
+      }, _callee8);
+    }));
+
+    return function registerAuthSession(_x7) {
+      return _ref8.apply(this, arguments);
+    };
+  }(); // Remove refresh_token cookie
+
+
+  var clearAuthSession = /*#__PURE__*/function () {
+    var _ref9 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee9() {
+      var res;
+      return _regeneratorRuntime().wrap(function _callee9$(_context9) {
+        while (1) {
+          switch (_context9.prev = _context9.next) {
+            case 0:
+              _context9.next = 2;
+              return fetch(ENGINE_URL + "/oauth/session-register", {
+                method: 'POST',
+                credentials: 'include'
+              });
+
+            case 2:
+              res = _context9.sent;
+
+              if (!res.ok) {
+                console.error('clearAuthSession error', res.status);
               }
 
             case 4:
@@ -872,33 +883,62 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       }, _callee9);
     }));
 
-    return function registerAuthSession(_x8) {
+    return function clearAuthSession() {
       return _ref9.apply(this, arguments);
     };
-  }(); // Remove refresh_token cookie
+  }(); // Flow auth account proof data resolver
 
 
-  var clearAuthSession = /*#__PURE__*/function () {
+  var accountProofDataResolver = /*#__PURE__*/function () {
     var _ref10 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee10() {
-      var res;
+      var res, json;
       return _regeneratorRuntime().wrap(function _callee10$(_context10) {
         while (1) {
           switch (_context10.prev = _context10.next) {
             case 0:
-              _context10.next = 2;
-              return fetch(ENGINE_URL + "/oauth/session-register", {
-                method: 'POST',
+              setResolverCalled(true);
+              _context10.next = 3;
+              return fetch(ENGINE_URL + "/oauth/flow/session", {
+                method: 'GET',
                 credentials: 'include'
               });
 
-            case 2:
+            case 3:
               res = _context10.sent;
 
-              if (!res.ok) {
-                console.error('clearAuthSession error', res.status);
+              if (!(res && res.ok)) {
+                _context10.next = 15;
+                break;
               }
 
-            case 4:
+              _context10.next = 7;
+              return res.json();
+
+            case 7:
+              json = _context10.sent;
+
+              if (!json.nonce) {
+                _context10.next = 12;
+                break;
+              }
+
+              return _context10.abrupt("return", {
+                appIdentifier: 'Grindery Nexus',
+                nonce: json.nonce
+              });
+
+            case 12:
+              throw new Error('get nonce failed');
+
+            case 13:
+              _context10.next = 17;
+              break;
+
+            case 15:
+              console.error('getFlowNonce error', res && res.status || 'Unknown error');
+              throw new Error('get nonce failed');
+
+            case 17:
             case "end":
               return _context10.stop();
           }
@@ -906,11 +946,76 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       }, _callee10);
     }));
 
-    return function clearAuthSession() {
+    return function accountProofDataResolver() {
       return _ref10.apply(this, arguments);
     };
-  }(); // Set web3Modal instance
+  }();
 
+  var restoreFlowSession = /*#__PURE__*/function () {
+    var _ref11 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee11(address) {
+      var res, json;
+      return _regeneratorRuntime().wrap(function _callee11$(_context11) {
+        while (1) {
+          switch (_context11.prev = _context11.next) {
+            case 0:
+              _context11.next = 2;
+              return fetch(ENGINE_URL + "/oauth/flow/session?address=" + address, {
+                method: 'GET',
+                credentials: 'include'
+              });
+
+            case 2:
+              res = _context11.sent;
+
+              if (!(res && res.ok)) {
+                _context11.next = 16;
+                break;
+              }
+
+              _context11.next = 6;
+              return res.json();
+
+            case 6:
+              json = _context11.sent;
+
+              if (!json.access_token) {
+                _context11.next = 13;
+                break;
+              }
+
+              setToken(json);
+              setAddress(address);
+              setChain('flow:mainnet');
+              _context11.next = 14;
+              break;
+
+            case 13:
+              throw new Error('flow user session failed');
+
+            case 14:
+              _context11.next = 18;
+              break;
+
+            case 16:
+              console.error('flow user session failed', res && res.status || 'Unknown error');
+              throw new Error('flow user session failed');
+
+            case 18:
+            case "end":
+              return _context11.stop();
+          }
+        }
+      }, _callee11);
+    }));
+
+    return function restoreFlowSession(_x8) {
+      return _ref11.apply(this, arguments);
+    };
+  }();
+
+  useEffect(function () {
+    config().put('fcl.accountProof.resolver', accountProofDataResolver);
+  }, []); // Set web3Modal instance
 
   useEffect(function () {
     var providerOptions = {};
@@ -960,32 +1065,13 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
   useEffect(function () {
     currentUser.subscribe(setFlowUser);
-  }, []); // Get authentication token if flow user is proofed
+  }, []); // Restore Flow user session if user available without resolver
 
   useEffect(function () {
-    var _flowUser$services;
-
-    if (flowUser && flowUser.addr && (_flowUser$services = flowUser.services) != null && _flowUser$services.find(function (service) {
-      return service.type === 'account-proof';
-    })) {
-      var _flowUser$services2;
-
-      var proof = (_flowUser$services2 = flowUser.services) == null ? void 0 : _flowUser$services2.find(function (service) {
-        return service.type === 'account-proof';
-      });
-
-      if (proof && proof.data && proof.data.nonce && proof.data.signatures && proof.data.signatures.length > 0 && proof.data.address) {
-        var _code = encode(JSON.stringify({
-          type: 'flow',
-          address: proof.data.address,
-          nonce: proof.data.nonce,
-          signatures: proof.data.signatures
-        }));
-
-        getToken(_code, 'flow');
-      }
+    if (flowUser && flowUser.addr && !resolverCalled) {
+      restoreFlowSession(flowUser.addr);
     }
-  }, [flowUser]);
+  }, [flowUser, resolverCalled]);
   return React.createElement(GrinderyNexusContext.Provider, {
     value: {
       user: user,

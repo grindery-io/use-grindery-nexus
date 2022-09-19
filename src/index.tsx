@@ -22,31 +22,6 @@ type AccountProofData = {
 // Flow auth account proof data resolver type
 type AccountProofDataResolver = () => Promise<AccountProofData | null>;
 
-// Flow auth account proof data resolver
-const accountProofDataResolver: AccountProofDataResolver = async () => {
-  const res = await fetch(`${ENGINE_URL}/oauth/flow-get-nonce`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (res && res.ok) {
-    let json = await res.json();
-
-    // Return nonce on success
-    if (json.nonce) {
-      return {
-        appIdentifier: 'Grindery Nexus',
-        nonce: json.nonce,
-      };
-    } else {
-      throw new Error('get nonce failed');
-    }
-  } else {
-    console.error('getFlowNonce error', (res && res.status) || 'Unknown error');
-    throw new Error('get nonce failed');
-  }
-};
-
 // Flow auth config
 fcl.config({
   'flow.network': 'mainnet',
@@ -54,7 +29,6 @@ fcl.config({
   'app.detail.title': 'Grindery Nexus',
   'app.detail.icon':
     'https://nexus.grindery.org/static/media/nexus-square.7402bdeb27ab56504250ca409fac38bd.svg',
-  'fcl.accountProof.resolver': accountProofDataResolver,
 });
 
 // Authentication token object definition
@@ -176,6 +150,14 @@ export const GrinderyNexusContextProvider = (
   // Flow chain user
   const [flowUser, setFlowUser] = useState<FlowUser>({ addr: '' });
 
+  // Is Flow account resolver called
+  const [resolverCalled, setResolverCalled] = useState(false);
+
+  const flowProof =
+    flowUser &&
+    flowUser.addr &&
+    flowUser.services?.find(service => service.type === 'account-proof');
+
   // Compiled authorization code
   const code =
     (message &&
@@ -184,6 +166,21 @@ export const GrinderyNexusContextProvider = (
         JSON.stringify({
           message: message,
           signature: signature,
+        })
+      )) ||
+    (flowProof &&
+      flowProof.data &&
+      flowProof.data.nonce &&
+      flowProof.data.signatures &&
+      flowProof.data.signatures.length > 0 &&
+      flowProof.data.address &&
+      resolverCalled &&
+      encode(
+        JSON.stringify({
+          type: 'flow',
+          address: flowProof.data.address,
+          nonce: flowProof.data.nonce,
+          signatures: flowProof.data.signatures,
         })
       )) ||
     null;
@@ -286,7 +283,7 @@ export const GrinderyNexusContextProvider = (
   };
 
   // Get access token from the engine API
-  const getToken = async (code: string, blockchain?: string) => {
+  const getToken = async (code: string) => {
     const res = await fetch(`${ENGINE_URL}/oauth/token?code=${code}`, {
       method: 'POST',
       headers: {
@@ -299,15 +296,26 @@ export const GrinderyNexusContextProvider = (
 
     if (res.ok) {
       let result = await res.json();
-      if (blockchain && blockchain === 'flow') {
+      // Set address and chain if Flow user proofed
+      if (flowProof) {
         setAddress((flowUser && flowUser.addr) || null);
         setChain('flow:mainnet');
       }
       setToken(result);
     } else {
       console.error('getToken error', res.status);
-      clearUserState();
-      disconnect();
+      // handle expried nonce for Flow user
+      if (flowProof) {
+        try {
+          await disconnect();
+        } catch (err) {
+          //
+        }
+        fcl.authenticate();
+      } else {
+        clearUserState();
+        disconnect();
+      }
     }
   };
 
@@ -340,6 +348,69 @@ export const GrinderyNexusContextProvider = (
       console.error('clearAuthSession error', res.status);
     }
   };
+
+  // Flow auth account proof data resolver
+  const accountProofDataResolver: AccountProofDataResolver = async () => {
+    setResolverCalled(true);
+
+    const res = await fetch(`${ENGINE_URL}/oauth/flow/session`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (res && res.ok) {
+      let json = await res.json();
+
+      // Return nonce on success
+      if (json.nonce) {
+        return {
+          appIdentifier: 'Grindery Nexus',
+          nonce: json.nonce,
+        };
+      } else {
+        throw new Error('get nonce failed');
+      }
+    } else {
+      console.error(
+        'getFlowNonce error',
+        (res && res.status) || 'Unknown error'
+      );
+      throw new Error('get nonce failed');
+    }
+  };
+
+  const restoreFlowSession = async (address: string) => {
+    const res = await fetch(
+      `${ENGINE_URL}/oauth/flow/session?address=${address}`,
+      {
+        method: 'GET',
+        credentials: 'include',
+      }
+    );
+
+    if (res && res.ok) {
+      let json = await res.json();
+
+      // Return nonce on success
+      if (json.access_token) {
+        setToken(json);
+        setAddress(address);
+        setChain('flow:mainnet');
+      } else {
+        throw new Error('flow user session failed');
+      }
+    } else {
+      console.error(
+        'flow user session failed',
+        (res && res.status) || 'Unknown error'
+      );
+      throw new Error('flow user session failed');
+    }
+  };
+
+  useEffect(() => {
+    fcl.config().put('fcl.accountProof.resolver', accountProofDataResolver);
+  }, []);
 
   // Set web3Modal instance
   useEffect(() => {
@@ -397,36 +468,12 @@ export const GrinderyNexusContextProvider = (
     fcl.currentUser.subscribe(setFlowUser);
   }, []);
 
-  // Get authentication token if flow user is proofed
+  // Restore Flow user session if user available without resolver
   useEffect(() => {
-    if (
-      flowUser &&
-      flowUser.addr &&
-      flowUser.services?.find(service => service.type === 'account-proof')
-    ) {
-      const proof = flowUser.services?.find(
-        service => service.type === 'account-proof'
-      );
-      if (
-        proof &&
-        proof.data &&
-        proof.data.nonce &&
-        proof.data.signatures &&
-        proof.data.signatures.length > 0 &&
-        proof.data.address
-      ) {
-        const code = encode(
-          JSON.stringify({
-            type: 'flow',
-            address: proof.data.address,
-            nonce: proof.data.nonce,
-            signatures: proof.data.signatures,
-          })
-        );
-        getToken(code, 'flow');
-      }
+    if (flowUser && flowUser.addr && !resolverCalled) {
+      restoreFlowSession(flowUser.addr);
     }
-  }, [flowUser]);
+  }, [flowUser, resolverCalled]);
 
   return (
     <GrinderyNexusContext.Provider
