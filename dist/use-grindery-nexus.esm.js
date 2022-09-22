@@ -389,7 +389,7 @@ var ENGINE_URL = 'https://orchestrator.grindery.org'; // Flow auth config
 
 config({
   'flow.network': 'mainnet',
-  'discovery.wallet': 'https://fcl-discovery.onflow.org/testnet/authn',
+  'discovery.wallet': 'https://fcl-discovery.onflow.org/authn',
   'app.detail.title': 'Grindery Nexus',
   'app.detail.icon': 'https://nexus.grindery.org/static/media/nexus-square.7402bdeb27ab56504250ca409fac38bd.svg'
 }); // Default context properties
@@ -738,13 +738,14 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
           switch (_context7.prev = _context7.next) {
             case 0:
               _context7.next = 2;
-              return fetch(ENGINE_URL + "/oauth/token?code=" + code, {
+              return fetch(ENGINE_URL + "/oauth/token", {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                  grant_type: 'authorization_code'
+                  grant_type: 'authorization_code',
+                  code: code
                 })
               });
 
@@ -1072,6 +1073,10 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       restoreFlowSession(flowUser.addr);
     }
   }, [flowUser, resolverCalled]);
+  console.log('flowUser', flowUser);
+  console.log('proof', flowProof);
+  console.log('token', token);
+  console.log('resolverCalled', resolverCalled);
   return React.createElement(GrinderyNexusContext.Provider, {
     value: {
       user: user,

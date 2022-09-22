@@ -25,7 +25,7 @@ type AccountProofDataResolver = () => Promise<AccountProofData | null>;
 // Flow auth config
 fcl.config({
   'flow.network': 'mainnet',
-  'discovery.wallet': 'https://fcl-discovery.onflow.org/testnet/authn',
+  'discovery.wallet': 'https://fcl-discovery.onflow.org/authn',
   'app.detail.title': 'Grindery Nexus',
   'app.detail.icon':
     'https://nexus.grindery.org/static/media/nexus-square.7402bdeb27ab56504250ca409fac38bd.svg',
@@ -284,13 +284,14 @@ export const GrinderyNexusContextProvider = (
 
   // Get access token from the engine API
   const getToken = async (code: string) => {
-    const res = await fetch(`${ENGINE_URL}/oauth/token?code=${code}`, {
+    const res = await fetch(`${ENGINE_URL}/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         grant_type: 'authorization_code',
+        code: code,
       }),
     });
 
@@ -474,6 +475,11 @@ export const GrinderyNexusContextProvider = (
       restoreFlowSession(flowUser.addr);
     }
   }, [flowUser, resolverCalled]);
+
+  console.log('flowUser', flowUser);
+  console.log('proof', flowProof);
+  console.log('token', token);
+  console.log('resolverCalled', resolverCalled);
 
   return (
     <GrinderyNexusContext.Provider
