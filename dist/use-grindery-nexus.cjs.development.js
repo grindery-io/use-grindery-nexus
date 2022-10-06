@@ -1080,10 +1080,6 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       restoreFlowSession(flowUser.addr);
     }
   }, [flowUser, resolverCalled]);
-  console.log('flowUser', flowUser);
-  console.log('proof', flowProof);
-  console.log('token', token);
-  console.log('resolverCalled', resolverCalled);
   return React__default.createElement(GrinderyNexusContext.Provider, {
     value: {
       user: user,

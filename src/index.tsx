@@ -476,11 +476,6 @@ export const GrinderyNexusContextProvider = (
     }
   }, [flowUser, resolverCalled]);
 
-  console.log('flowUser', flowUser);
-  console.log('proof', flowProof);
-  console.log('token', token);
-  console.log('resolverCalled', resolverCalled);
-
   return (
     <GrinderyNexusContext.Provider
       value={{
