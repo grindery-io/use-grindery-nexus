@@ -7,7 +7,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var React = require('react');
 var React__default = _interopDefault(React);
 var Web3Modal = _interopDefault(require('web3modal'));
-var ethers = require('ethers');
+var ethersLib = require('ethers');
 var universalBase64url = require('universal-base64url');
 var fcl = require('@onflow/fcl');
 
@@ -410,6 +410,8 @@ var defaultContext = {
   flowUser: {
     addr: ''
   },
+  provider: null,
+  ethers: null,
   connect: function connect() {},
   disconnect: function disconnect() {},
   setUser: function setUser() {},
@@ -484,6 +486,8 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       resolverCalled = _useState11[0],
       setResolverCalled = _useState11[1];
 
+  var provider = library;
+  var ethers = ethersLib;
   var flowProof = flowUser && flowUser.addr && ((_flowUser$services = flowUser.services) == null ? void 0 : _flowUser$services.find(function (service) {
     return service.type === 'account-proof';
   })); // Compiled authorization code
@@ -553,7 +557,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
             case 2:
               provider = _context3.sent;
               addListeners(provider);
-              ethersProvider = new ethers.providers.Web3Provider(provider);
+              ethersProvider = new ethersLib.providers.Web3Provider(provider);
               _context3.next = 7;
               return ethersProvider.getSigner().getAddress();
 
@@ -1080,6 +1084,16 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       restoreFlowSession(flowUser.addr);
     }
   }, [flowUser, resolverCalled]);
+  React.useEffect(function () {
+    window.nexus_auth = {
+      user: user,
+      address: address,
+      chain: chain,
+      message: message,
+      token: token,
+      flowUser: flowUser
+    };
+  }, [user, address, chain, message, token, flowUser]);
   return React__default.createElement(GrinderyNexusContext.Provider, {
     value: {
       user: user,
@@ -1088,6 +1102,8 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       token: token,
       code: code,
       flowUser: flowUser,
+      provider: provider,
+      ethers: ethers,
       connect: connect,
       disconnect: disconnect,
       setUser: setUser,

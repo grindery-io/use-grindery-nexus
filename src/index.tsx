@@ -2,13 +2,19 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 // @ts-ignore
 import Web3Modal from 'web3modal';
 // @ts-ignore
-import { providers } from 'ethers';
+import * as ethersLib from 'ethers';
 // @ts-ignore
 import { encode } from 'universal-base64url';
 // @ts-ignore
 import * as fcl from '@onflow/fcl';
 
 export const ENGINE_URL = 'https://orchestrator.grindery.org';
+
+declare global {
+  interface Window {
+    nexus_auth: any;
+  }
+}
 
 // Flow authentication account proof data type
 type AccountProofData = {
@@ -65,6 +71,12 @@ export type GrinderyNexusContextProps = {
   /** Flow user object */
   flowUser: FlowUser;
 
+  /** Ethers provider */
+  provider: any;
+
+  /** Ethers */
+  ethers: any;
+
   /** Connect user wallet */
   connect: () => void;
 
@@ -99,6 +111,8 @@ const defaultContext = {
   token: null,
   code: null,
   flowUser: { addr: '' },
+  provider: null,
+  ethers: null,
   connect: () => {},
   disconnect: () => {},
   setUser: () => {},
@@ -153,6 +167,10 @@ export const GrinderyNexusContextProvider = (
   // Is Flow account resolver called
   const [resolverCalled, setResolverCalled] = useState(false);
 
+  const provider = library;
+
+  const ethers = ethersLib;
+
   const flowProof =
     flowUser &&
     flowUser.addr &&
@@ -201,7 +219,7 @@ export const GrinderyNexusContextProvider = (
   const connect = async () => {
     const provider = await web3Modal.connect();
     addListeners(provider);
-    const ethersProvider = new providers.Web3Provider(provider);
+    const ethersProvider = new ethersLib.providers.Web3Provider(provider);
     const userAddress = await ethersProvider.getSigner().getAddress();
     //const userChain = await ethersProvider.getSigner().getChainId();
     const accounts = await ethersProvider.listAccounts();
@@ -476,6 +494,17 @@ export const GrinderyNexusContextProvider = (
     }
   }, [flowUser, resolverCalled]);
 
+  useEffect(() => {
+    window.nexus_auth = {
+      user,
+      address,
+      chain,
+      message,
+      token,
+      flowUser,
+    };
+  }, [user, address, chain, message, token, flowUser]);
+
   return (
     <GrinderyNexusContext.Provider
       value={{
@@ -485,6 +514,8 @@ export const GrinderyNexusContextProvider = (
         token,
         code,
         flowUser,
+        provider,
+        ethers,
         connect,
         disconnect,
         setUser,

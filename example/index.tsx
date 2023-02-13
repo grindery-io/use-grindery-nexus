@@ -9,9 +9,11 @@ declare global {
 }
 
 const AuthenticationButton = () => {
-  const { user, connect, disconnect } = useGrinderyNexus();
+  const { user, connect, disconnect, ethers, provider } = useGrinderyNexus();
 
   console.log('user', user);
+  console.log('ethers', ethers);
+  console.log('provider', provider);
 
   if (user) {
     return (

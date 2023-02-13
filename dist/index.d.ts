@@ -1,5 +1,10 @@
 import React from 'react';
 export declare const ENGINE_URL = "https://orchestrator.grindery.org";
+declare global {
+    interface Window {
+        nexus_auth: any;
+    }
+}
 export declare type AuthToken = {
     access_token: string;
     expires_in: number;
@@ -23,6 +28,10 @@ export declare type GrinderyNexusContextProps = {
     code: string | null;
     /** Flow user object */
     flowUser: FlowUser;
+    /** Ethers provider */
+    provider: any;
+    /** Ethers */
+    ethers: any;
     /** Connect user wallet */
     connect: () => void;
     /** Disconnect user wallet */

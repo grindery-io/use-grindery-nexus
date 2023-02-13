@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import Web3Modal from 'web3modal';
+import * as ethersLib from 'ethers';
 import { providers } from 'ethers';
 import { encode } from 'universal-base64url';
 import { config, currentUser, authenticate, unauthenticate } from '@onflow/fcl';
@@ -403,6 +404,8 @@ var defaultContext = {
   flowUser: {
     addr: ''
   },
+  provider: null,
+  ethers: null,
   connect: function connect() {},
   disconnect: function disconnect() {},
   setUser: function setUser() {},
@@ -477,6 +480,8 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       resolverCalled = _useState11[0],
       setResolverCalled = _useState11[1];
 
+  var provider = library;
+  var ethers = ethersLib;
   var flowProof = flowUser && flowUser.addr && ((_flowUser$services = flowUser.services) == null ? void 0 : _flowUser$services.find(function (service) {
     return service.type === 'account-proof';
   })); // Compiled authorization code
@@ -1073,6 +1078,16 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       restoreFlowSession(flowUser.addr);
     }
   }, [flowUser, resolverCalled]);
+  useEffect(function () {
+    window.nexus_auth = {
+      user: user,
+      address: address,
+      chain: chain,
+      message: message,
+      token: token,
+      flowUser: flowUser
+    };
+  }, [user, address, chain, message, token, flowUser]);
   return React.createElement(GrinderyNexusContext.Provider, {
     value: {
       user: user,
@@ -1081,6 +1096,8 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       token: token,
       code: code,
       flowUser: flowUser,
+      provider: provider,
+      ethers: ethers,
       connect: connect,
       disconnect: disconnect,
       setUser: setUser,
