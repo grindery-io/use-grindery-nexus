@@ -406,6 +406,7 @@ var defaultContext = {
   },
   provider: null,
   ethers: null,
+  chainName: null,
   connect: function connect() {},
   disconnect: function disconnect() {},
   setUser: function setUser() {},
@@ -419,7 +420,7 @@ var GrinderyNexusContext = /*#__PURE__*/createContext(defaultContext);
 /** Grindery Nexus Context Provider */
 
 var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) {
-  var _flowUser$services;
+  var _chains$find, _flowUser$services;
 
   var children = props.children;
   var cacheProvider = typeof props.cacheProvider !== 'undefined' ? props.cacheProvider : true; // Web3Modal instance
@@ -478,8 +479,16 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
   var _useState11 = useState(false),
       resolverCalled = _useState11[0],
-      setResolverCalled = _useState11[1];
+      setResolverCalled = _useState11[1]; // Chains list
 
+
+  var _useState12 = useState([]),
+      chains = _useState12[0],
+      setChains = _useState12[1];
+
+  var chainName = ((_chains$find = chains.find(function (c) {
+    return c.value && c.value === chain;
+  })) == null ? void 0 : _chains$find.label) || chain;
   var provider = library;
   var ethers = ethersLib;
   var flowProof = flowUser && flowUser.addr && ((_flowUser$services = flowUser.services) == null ? void 0 : _flowUser$services.find(function (service) {
@@ -494,7 +503,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     address: flowProof.data.address,
     nonce: flowProof.data.nonce,
     signatures: flowProof.data.signatures
-  })) || null; // Subscribe to account change
+  })) || null; // Subscribe to changes
 
   var addListeners = /*#__PURE__*/function () {
     var _ref = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(web3ModalProvider) {
@@ -502,9 +511,11 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
         while (1) {
           switch (_context2.prev = _context2.next) {
             case 0:
+              // Subscribe to accounts change
               web3ModalProvider.on('accountsChanged', function () {
                 window.location.reload();
-              });
+              }); // Subscribe to provider disconnection
+
               web3ModalProvider.on('disconnect', /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
                 return _regeneratorRuntime().wrap(function _callee$(_context) {
                   while (1) {
@@ -522,9 +533,13 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
                     }
                   }
                 }, _callee);
-              })));
+              }))); // Subscribe to chainId change
 
-            case 2:
+              web3ModalProvider.on('chainChanged', function (chainId) {
+                setChain("eip155:" + parseInt(chainId, 16));
+              });
+
+            case 3:
             case "end":
               return _context2.stop();
           }
@@ -540,7 +555,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
 
   var connect = /*#__PURE__*/function () {
     var _ref3 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3() {
-      var provider, ethersProvider, userAddress, accounts;
+      var provider, ethersProvider, userAddress, userChain, accounts;
       return _regeneratorRuntime().wrap(function _callee3$(_context3) {
         while (1) {
           switch (_context3.prev = _context3.next) {
@@ -558,17 +573,22 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
             case 7:
               userAddress = _context3.sent;
               _context3.next = 10;
-              return ethersProvider.listAccounts();
+              return ethersProvider.getSigner().getChainId();
 
             case 10:
+              userChain = _context3.sent;
+              _context3.next = 13;
+              return ethersProvider.listAccounts();
+
+            case 13:
               accounts = _context3.sent;
               setLibrary(ethersProvider);
               if (accounts) setAccount(accounts[0]);
               setAddress(userAddress); // For EVM wallet always set Ethereum chain
 
-              setChain('eip155:1');
+              setChain("eip155:" + userChain);
 
-            case 15:
+            case 18:
             case "end":
               return _context3.stop();
           }
@@ -1019,6 +1039,14 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     };
   }();
 
+  var getChains = function getChains() {
+    fetch('https://cds.grindery.org/chains/evm.json').then(function (response) {
+      return response.json();
+    }).then(function (data) {
+      setChains(data);
+    });
+  };
+
   useEffect(function () {
     config().put('fcl.accountProof.resolver', accountProofDataResolver);
   }, []); // Set web3Modal instance
@@ -1040,8 +1068,8 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
   }, [web3Modal]); // set user if token and address is known
 
   useEffect(function () {
-    if (address && token && token.access_token && chain) {
-      setUser(chain + ":" + address);
+    if (address && token && token.access_token) {
+      setUser("eip155:1:" + address);
 
       if (token.refresh_token) {
         registerAuthSession(token.refresh_token);
@@ -1049,7 +1077,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     } else {
       setUser(null);
     }
-  }, [token, address, chain]); // Start session if user address is known
+  }, [token, address]); // Start session if user address is known
 
   useEffect(function () {
     if (address && !message && !signature && !token) {
@@ -1079,15 +1107,19 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
     }
   }, [flowUser, resolverCalled]);
   useEffect(function () {
+    getChains();
+  }, []);
+  useEffect(function () {
     window.nexus_auth = {
       user: user,
       address: address,
       chain: chain,
+      chainName: chainName,
       message: message,
       token: token,
       flowUser: flowUser
     };
-  }, [user, address, chain, message, token, flowUser]);
+  }, [user, address, chain, message, token, flowUser, chainName]);
   return React.createElement(GrinderyNexusContext.Provider, {
     value: {
       user: user,
@@ -1098,6 +1130,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       flowUser: flowUser,
       provider: provider,
       ethers: ethers,
+      chainName: chainName,
       connect: connect,
       disconnect: disconnect,
       setUser: setUser,

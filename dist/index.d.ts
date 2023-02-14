@@ -32,6 +32,8 @@ export declare type GrinderyNexusContextProps = {
     provider: any;
     /** Ethers */
     ethers: any;
+    /** Blockchains name */
+    chainName: string | null | number;
     /** Connect user wallet */
     connect: () => void;
     /** Disconnect user wallet */

@@ -77,6 +77,9 @@ export type GrinderyNexusContextProps = {
   /** Ethers */
   ethers: any;
 
+  /** Blockchains name */
+  chainName: string | null | number;
+
   /** Connect user wallet */
   connect: () => void;
 
@@ -113,6 +116,7 @@ const defaultContext = {
   flowUser: { addr: '' },
   provider: null,
   ethers: null,
+  chainName: null,
   connect: () => {},
   disconnect: () => {},
   setUser: () => {},
@@ -167,6 +171,12 @@ export const GrinderyNexusContextProvider = (
   // Is Flow account resolver called
   const [resolverCalled, setResolverCalled] = useState(false);
 
+  // Chains list
+  const [chains, setChains] = useState<any[]>([]);
+
+  const chainName =
+    chains.find(c => c.value && c.value === chain)?.label || chain;
+
   const provider = library;
 
   const ethers = ethersLib;
@@ -203,15 +213,22 @@ export const GrinderyNexusContextProvider = (
       )) ||
     null;
 
-  // Subscribe to account change
+  // Subscribe to changes
   const addListeners = async (web3ModalProvider: any) => {
+    // Subscribe to accounts change
     web3ModalProvider.on('accountsChanged', () => {
       window.location.reload();
     });
 
+    // Subscribe to provider disconnection
     web3ModalProvider.on('disconnect', async () => {
       await web3Modal.clearCachedProvider();
       disconnect();
+    });
+
+    // Subscribe to chainId change
+    web3ModalProvider.on('chainChanged', (chainId: string) => {
+      setChain(`eip155:${parseInt(chainId, 16)}`);
     });
   };
 
@@ -221,13 +238,13 @@ export const GrinderyNexusContextProvider = (
     addListeners(provider);
     const ethersProvider = new ethersLib.providers.Web3Provider(provider);
     const userAddress = await ethersProvider.getSigner().getAddress();
-    //const userChain = await ethersProvider.getSigner().getChainId();
+    const userChain = await ethersProvider.getSigner().getChainId();
     const accounts = await ethersProvider.listAccounts();
     setLibrary(ethersProvider);
     if (accounts) setAccount(accounts[0]);
     setAddress(userAddress);
     // For EVM wallet always set Ethereum chain
-    setChain('eip155:1');
+    setChain(`eip155:${userChain}`);
   };
 
   // Connect with Flow wallet
@@ -427,6 +444,14 @@ export const GrinderyNexusContextProvider = (
     }
   };
 
+  const getChains = () => {
+    fetch('https://cds.grindery.org/chains/evm.json')
+      .then(response => response.json())
+      .then(data => {
+        setChains(data);
+      });
+  };
+
   useEffect(() => {
     fcl.config().put('fcl.accountProof.resolver', accountProofDataResolver);
   }, []);
@@ -451,15 +476,15 @@ export const GrinderyNexusContextProvider = (
 
   // set user if token and address is known
   useEffect(() => {
-    if (address && token && token.access_token && chain) {
-      setUser(`${chain}:${address}`);
+    if (address && token && token.access_token) {
+      setUser(`eip155:1:${address}`);
       if (token.refresh_token) {
         registerAuthSession(token.refresh_token);
       }
     } else {
       setUser(null);
     }
-  }, [token, address, chain]);
+  }, [token, address]);
 
   // Start session if user address is known
   useEffect(() => {
@@ -495,15 +520,20 @@ export const GrinderyNexusContextProvider = (
   }, [flowUser, resolverCalled]);
 
   useEffect(() => {
+    getChains();
+  }, []);
+
+  useEffect(() => {
     window.nexus_auth = {
       user,
       address,
       chain,
+      chainName,
       message,
       token,
       flowUser,
     };
-  }, [user, address, chain, message, token, flowUser]);
+  }, [user, address, chain, message, token, flowUser, chainName]);
 
   return (
     <GrinderyNexusContext.Provider
@@ -516,6 +546,7 @@ export const GrinderyNexusContextProvider = (
         flowUser,
         provider,
         ethers,
+        chainName,
         connect,
         disconnect,
         setUser,
