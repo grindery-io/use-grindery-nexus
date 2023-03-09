@@ -572,7 +572,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
             case 2:
               provider = _context3.sent;
               addListeners(provider);
-              ethersProvider = new ethersLib.providers.Web3Provider(provider);
+              ethersProvider = new ethersLib.providers.Web3Provider(provider, 'any');
               _context3.next = 7;
               return ethersProvider.getSigner().getAddress();
 

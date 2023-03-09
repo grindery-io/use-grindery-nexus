@@ -236,7 +236,10 @@ export const GrinderyNexusContextProvider = (
   const connect = async () => {
     const provider = await web3Modal.connect();
     addListeners(provider);
-    const ethersProvider = new ethersLib.providers.Web3Provider(provider);
+    const ethersProvider = new ethersLib.providers.Web3Provider(
+      provider,
+      'any'
+    );
     const userAddress = await ethersProvider.getSigner().getAddress();
     const userChain = await ethersProvider.getSigner().getChainId();
     const accounts = await ethersProvider.listAccounts();
