@@ -484,8 +484,6 @@ export const GrinderyNexusContextProvider = (
       if (token.refresh_token) {
         registerAuthSession(token.refresh_token);
       }
-    } else {
-      setUser(null);
     }
   }, [token, address]);
 

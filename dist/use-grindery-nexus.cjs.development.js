@@ -1080,8 +1080,6 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       if (token.refresh_token) {
         registerAuthSession(token.refresh_token);
       }
-    } else {
-      setUser(null);
     }
   }, [token, address]); // Start session if user address is known
 
