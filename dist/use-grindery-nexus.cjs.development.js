@@ -522,24 +522,38 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
                 window.location.reload();
               }); // Subscribe to provider disconnection
 
-              web3ModalProvider.on('disconnect', /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
-                return _regeneratorRuntime().wrap(function _callee$(_context) {
-                  while (1) {
-                    switch (_context.prev = _context.next) {
-                      case 0:
-                        _context.next = 2;
-                        return web3Modal.clearCachedProvider();
+              web3ModalProvider.on('disconnect', /*#__PURE__*/function () {
+                var _ref2 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(error) {
+                  return _regeneratorRuntime().wrap(function _callee$(_context) {
+                    while (1) {
+                      switch (_context.prev = _context.next) {
+                        case 0:
+                          if (!(error.code === 1013)) {
+                            _context.next = 2;
+                            break;
+                          }
 
-                      case 2:
-                        disconnect();
+                          return _context.abrupt("return");
 
-                      case 3:
-                      case "end":
-                        return _context.stop();
+                        case 2:
+                          _context.next = 4;
+                          return web3Modal.clearCachedProvider();
+
+                        case 4:
+                          disconnect();
+
+                        case 5:
+                        case "end":
+                          return _context.stop();
+                      }
                     }
-                  }
-                }, _callee);
-              }))); // Subscribe to chainId change
+                  }, _callee);
+                }));
+
+                return function (_x2) {
+                  return _ref2.apply(this, arguments);
+                };
+              }()); // Subscribe to chainId change
 
               web3ModalProvider.on('chainChanged', function (chainId) {
                 setChain("eip155:" + parseInt(chainId, 16));
@@ -707,7 +721,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       }, _callee5);
     }));
 
-    return function startSession(_x2) {
+    return function startSession(_x3) {
       return _ref5.apply(this, arguments);
     };
   }(); // Sign authentication message with MetaMask
@@ -755,7 +769,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       }, _callee6, null, [[2, 9]]);
     }));
 
-    return function signMessage(_x3, _x4, _x5) {
+    return function signMessage(_x4, _x5, _x6) {
       return _ref6.apply(this, arguments);
     };
   }(); // Get access token from the engine API
@@ -841,7 +855,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       }, _callee7, null, [[13, 18]]);
     }));
 
-    return function getToken(_x6) {
+    return function getToken(_x7) {
       return _ref7.apply(this, arguments);
     };
   }(); // Set refresh_token cookie
@@ -881,7 +895,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       }, _callee8);
     }));
 
-    return function registerAuthSession(_x7) {
+    return function registerAuthSession(_x8) {
       return _ref8.apply(this, arguments);
     };
   }(); // Remove refresh_token cookie
@@ -1040,7 +1054,7 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       }, _callee11);
     }));
 
-    return function restoreFlowSession(_x8) {
+    return function restoreFlowSession(_x9) {
       return _ref11.apply(this, arguments);
     };
   }();
@@ -1080,6 +1094,8 @@ var GrinderyNexusContextProvider = function GrinderyNexusContextProvider(props) 
       if (token.refresh_token) {
         registerAuthSession(token.refresh_token);
       }
+    } else {
+      setUser(null);
     }
   }, [token, address]); // Start session if user address is known
 

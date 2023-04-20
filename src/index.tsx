@@ -221,7 +221,14 @@ export const GrinderyNexusContextProvider = (
     });
 
     // Subscribe to provider disconnection
-    web3ModalProvider.on('disconnect', async () => {
+    web3ModalProvider.on('disconnect', async (error: any) => {
+      /**
+       * Ignore 1013 disconnect event, due to MetaMask extension bug:
+       * https://github.com/MetaMask/metamask-extension/issues/13375#issuecomment-1087023057
+       */
+      if (error.code === 1013) {
+        return;
+      }
       await web3Modal.clearCachedProvider();
       disconnect();
     });
@@ -484,6 +491,8 @@ export const GrinderyNexusContextProvider = (
       if (token.refresh_token) {
         registerAuthSession(token.refresh_token);
       }
+    } else {
+      setUser(null);
     }
   }, [token, address]);
 
